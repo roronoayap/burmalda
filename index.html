@@ -205,6 +205,13 @@
   }
   .date-range-row{display:flex; gap:10px; margin-bottom:18px;}
   .date-input-wrap{flex:1; background:#1c1c21; border:1px solid var(--line); border-radius:13px; padding:8px 12px; box-shadow:inset 0 1px 3px rgba(0,0,0,.28);}
+  .entry-date-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:#1c1c21; border:1px solid var(--line); border-radius:13px;
+    padding:10px 14px; margin-bottom:14px; box-shadow:inset 0 1px 3px rgba(0,0,0,.25);
+  }
+  .entry-date-label{font-size:13px; color:var(--mute); font-weight:600;}
+  .entry-date-input{background:transparent; border:none; color:var(--ink); font-size:14px; font-weight:600; font-family:inherit; outline:none; color-scheme:dark; text-align:right;}
   .date-input-wrap label{display:block; font-size:11px; color:var(--mute); margin-bottom:2px;}
   .date-input-wrap input[type=date]{
     width:100%; background:transparent; border:none; color:var(--ink); font-size:13.5px; font-weight:600;
@@ -373,6 +380,10 @@
 
     <div class="card">
       <div class="section-label">Новий запис</div>
+      <div class="entry-date-row">
+        <label class="entry-date-label" for="entryDate">Дата</label>
+        <input type="date" id="entryDate" class="entry-date-input">
+      </div>
       <div class="segment" id="segment"></div>
       <div class="models" id="models"></div>
       <div class="qty-row">
@@ -1144,13 +1155,14 @@ document.getElementById("settingsBtn").onclick = () => {
 };
 document.getElementById("recordBtn").onclick = () => {
   if(!selModel || qty<1) return;
-  const today = todayKey();
+  const entryDateInput = document.getElementById("entryDate");
+  const chosenDate = entryDateInput.value || todayKey();
   const addedIds = [];
   for(let i=0; i<qty; i++){
     const newId = `batchid-${pad5(batchCounter)}`;
     records.unshift({
       id: newId,
-      date: today, type: selType, model: selModel, qty: 1, rate: rates[selType],
+      date: chosenDate, type: selType, model: selModel, qty: 1, rate: rates[selType],
     });
     addedIds.push(newId);
     batchCounter++;
@@ -1171,6 +1183,11 @@ document.getElementById("recordBtn").onclick = () => {
 load();
 renderAll();
 startAutoSync();
+
+const entryDateInit = document.getElementById("entryDate");
+entryDateInit.min = dateKeyOf(EARLIEST_DATE);
+entryDateInit.max = todayKey();
+entryDateInit.value = todayKey();
 </script>
 </body>
 </html>
