@@ -42,21 +42,21 @@
   .header{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;}
   .eyebrow{color:var(--mute); font-size:13px; letter-spacing:.4px; margin-bottom:4px;}
   .title{font-size:22px; font-weight:700; letter-spacing:-.3px; font-family:'Space Grotesk',sans-serif;}
-  .icon-btn{width:40px; height:40px; border-radius:12px; background:#1a1a1f; border:1px solid var(--line); color:var(--gold); font-size:16px; font-weight:700;}
+  .icon-btn{width:40px; height:40px; border-radius:13px; background:#1a1a1f; border:1px solid var(--line); color:var(--gold); font-size:16px; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);}
 
   /* Налаштування */
   .settings{border:1px solid var(--line); border-radius:16px; padding:6px 16px; margin-bottom:18px; background:#16161a; display:none;}
   .settings.open{display:block;}
   .settings-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:12px;}
   .settings-row .left{display:flex; align-items:center; gap:8px;}
-  .rate-input{width:90px; text-align:right; background:#1d1d22; border:1px solid var(--line); border-radius:10px; padding:8px 10px; color:var(--ink); font-size:16px; font-weight:600; outline:none; font-family:inherit;}
+  .rate-input{width:90px; text-align:right; background:#1d1d22; border:1px solid var(--line); border-radius:10px; padding:8px 10px; color:var(--ink); font-size:16px; font-weight:600; outline:none; font-family:inherit; box-shadow:inset 0 1px 3px rgba(0,0,0,.3);}
 
   .settings-divider{border-top:1px solid var(--line); margin-top:4px;}
   .settings-label{font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--mute); padding-top:12px; margin-bottom:8px;}
   .sheet-block{display:flex; flex-direction:column; gap:9px; padding-bottom:12px;}
-  .sheet-url-input{width:100%; background:#1d1d22; border:1px solid var(--line); border-radius:10px; padding:9px 11px; color:var(--ink); font-size:13.5px; outline:none; font-family:inherit;}
+  .sheet-url-input{width:100%; background:#1d1d22; border:1px solid var(--line); border-radius:10px; padding:9px 11px; color:var(--ink); font-size:13.5px; outline:none; font-family:inherit; box-shadow:inset 0 1px 3px rgba(0,0,0,.3);}
   .sync-row{display:flex; align-items:center; gap:10px;}
-  .sync-btn{flex-shrink:0; padding:9px 16px; background:var(--gold); border:none; border-radius:10px; color:#1d1607; font-size:13.5px; font-weight:700;}
+  .sync-btn{flex-shrink:0; padding:9px 16px; background:var(--gold); border:none; border-radius:10px; color:#1d1607; font-size:13.5px; font-weight:700; box-shadow:0 3px 12px rgba(233,185,92,.18), inset 0 1px 0 rgba(255,255,255,.3);}
   .sync-btn:disabled{opacity:.5;}
   .sync-status{font-size:12px; color:var(--mute); flex:1; line-height:1.35;}
   .sync-status.err{color:#e08a7d;}
@@ -91,11 +91,15 @@
   .muted{color:var(--mute); font-size:14px;}
 
   /* Картки */
-  .card{background:#15151a; border:1px solid #232228; border-radius:20px; padding:18px 18px 20px; margin-bottom:14px;}
+  .card{
+    background:linear-gradient(165deg,#18171d 0%,#141318 100%);
+    border:1px solid #232228; border-radius:22px; padding:18px 18px 20px; margin-bottom:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.3), 0 1px 0 rgba(255,255,255,.03) inset;
+  }
   .section-label{font-size:11.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--mute); margin-bottom:14px; font-family:'Space Grotesk',sans-serif;}
 
   /* Сегмент типів */
-  .segment{display:flex; background:#1c1c21; border:1px solid var(--line); border-radius:13px; padding:3px; margin-bottom:12px;}
+  .segment{display:flex; background:#1c1c21; border:1px solid var(--line); border-radius:13px; padding:3px; margin-bottom:12px; box-shadow:inset 0 1px 3px rgba(0,0,0,.25);}
   .segment button{flex:1; padding:9px 0; border-radius:10px; background:transparent; border:none; color:var(--mute); font-size:15px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:1px;}
   .segment button small{font-size:11px; opacity:.75; font-weight:600;}
   .segment button.active-IP{background:var(--ip-soft); color:var(--ip);}
@@ -104,22 +108,23 @@
 
   /* Чипи моделей */
   .models{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
-  .chip{background:transparent; border:1px solid #35343b; border-radius:999px; padding:9px 15px; color:#cfccc4; font-size:14.5px; font-weight:500;}
+  .chip{background:transparent; border:1px solid #35343b; border-radius:999px; padding:9px 15px; color:#cfccc4; font-size:14.5px; font-weight:500; transition:border-color .15s, background .15s, color .15s;}
   .chip.sel-IP{background:var(--ip-soft); border-color:var(--ip); color:var(--ip); font-weight:700;}
   .chip.sel-Analog{background:var(--an-soft); border-color:var(--an); color:var(--an); font-weight:700;}
   .chip.sel-Radio{background:var(--ra-soft); border-color:var(--ra); color:var(--ra); font-weight:700;}
 
   /* Кількість */
   .qty-row{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:16px;}
-  .stepper{display:flex; align-items:center; background:#1c1c21; border:1px solid var(--line); border-radius:13px;}
+  .stepper{display:flex; align-items:center; background:#1c1c21; border:1px solid var(--line); border-radius:13px; box-shadow:inset 0 1px 3px rgba(0,0,0,.25);}
   .stepper button{width:48px; height:48px; background:transparent; border:none; color:var(--ink); font-size:22px;}
-  .qty-val{min-width:36px; text-align:center; font-size:19px; font-weight:700; font-family:'Space Grotesk',sans-serif;}
+  .qty-val{min-width:44px; text-align:center; font-size:19px; font-weight:700; font-family:'Space Grotesk',sans-serif; background:transparent; border:none; color:var(--ink); outline:none; padding:0; -moz-appearance:textfield;}
+  .qty-val::-webkit-outer-spin-button, .qty-val::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .calc{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
   .calc .sum{font-size:22px; font-weight:700; letter-spacing:-.3px; color:var(--gold); font-family:'Space Grotesk',sans-serif;}
   .calc .formula{color:var(--mute); font-size:13px;}
 
   /* Кнопка запису */
-  .record-btn{width:100%; padding:16px 0; background:var(--gold); border:none; border-radius:14px; color:#1d1607; font-size:16px; font-weight:800; box-shadow:0 6px 24px rgba(233,185,92,.18); transition:background .15s;}
+  .record-btn{width:100%; padding:16px 0; background:var(--gold); border:none; border-radius:14px; color:#1d1607; font-size:16px; font-weight:800; box-shadow:0 6px 24px rgba(233,185,92,.2), inset 0 1px 0 rgba(255,255,255,.35); transition:background .15s;}
   .record-btn:disabled{opacity:.3; cursor:not-allowed; box-shadow:none;}
   @keyframes recordPop{0%{transform:scale(1);} 40%{transform:scale(1.035);} 100%{transform:scale(1);}}
   .record-btn.flash{background:#f4d189; animation:recordPop .4s cubic-bezier(.34,1.56,.64,1);}
@@ -191,7 +196,7 @@
     width:100%; appearance:none; -webkit-appearance:none; -moz-appearance:none;
     background:#1c1c21; border:1px solid var(--line); border-radius:13px;
     padding:11px 32px 11px 14px; color:var(--ink); font-size:14.5px; font-weight:600;
-    font-family:inherit; outline:none;
+    font-family:inherit; outline:none; box-shadow:inset 0 1px 3px rgba(0,0,0,.25);
   }
   .ios-select::after{
     content:""; position:absolute; right:13px; top:50%; width:8px; height:8px;
@@ -199,7 +204,7 @@
     transform:translateY(-65%) rotate(45deg); pointer-events:none;
   }
   .date-range-row{display:flex; gap:10px; margin-bottom:18px;}
-  .date-input-wrap{flex:1; background:#1c1c21; border:1px solid var(--line); border-radius:13px; padding:8px 12px;}
+  .date-input-wrap{flex:1; background:#1c1c21; border:1px solid var(--line); border-radius:13px; padding:8px 12px; box-shadow:inset 0 1px 3px rgba(0,0,0,.28);}
   .date-input-wrap label{display:block; font-size:11px; color:var(--mute); margin-bottom:2px;}
   .date-input-wrap input[type=date]{
     width:100%; background:transparent; border:none; color:var(--ink); font-size:13.5px; font-weight:600;
@@ -335,7 +340,7 @@
       <div class="qty-row">
         <div class="stepper">
           <button id="minus" aria-label="Менше">−</button>
-          <div class="qty-val" id="qtyVal">1</div>
+          <input class="qty-val" id="qtyVal" type="number" inputmode="numeric" min="1" value="1">
           <button id="plus" aria-label="Більше">+</button>
         </div>
         <div class="calc">
@@ -831,7 +836,16 @@ function renderModels(){
 }
 
 function renderQty(){
-  document.getElementById("qtyVal").textContent = qty;
+  document.getElementById("qtyVal").value = qty;
+  document.getElementById("formula").textContent = `${qty} × ${rates[selType]} ₴`;
+  document.getElementById("calcSum").textContent = `${fmt(qty*rates[selType])} ₴`;
+  const btn = document.getElementById("recordBtn");
+  btn.disabled = !selModel;
+  btn.textContent = selModel ? `Записати · ${selModel}` : "Оберіть модель";
+  btn.classList.remove("flash");
+}
+
+function updateQtyPreview(){
   document.getElementById("formula").textContent = `${qty} × ${rates[selType]} ₴`;
   document.getElementById("calcSum").textContent = `${fmt(qty*rates[selType])} ₴`;
   const btn = document.getElementById("recordBtn");
@@ -990,7 +1004,17 @@ document.querySelectorAll(".tab-btn").forEach(b =>
 );
 
 document.getElementById("minus").onclick = () => { qty = Math.max(1, qty-1); renderQty(); };
-document.getElementById("plus").onclick = () => { qty++; renderQty(); };
+document.getElementById("plus").onclick = () => { qty = Math.min(999, qty+1); renderQty(); };
+document.getElementById("qtyVal").oninput = (e) => {
+  const v = parseInt(e.target.value, 10);
+  if(Number.isFinite(v) && v > 0) qty = Math.min(v, 999);
+  updateQtyPreview();
+};
+document.getElementById("qtyVal").onblur = (e) => {
+  const v = parseInt(e.target.value, 10);
+  qty = (Number.isFinite(v) && v > 0) ? Math.min(v, 999) : 1;
+  renderQty();
+};
 document.getElementById("settingsBtn").onclick = () => {
   const s = document.getElementById("settings");
   s.classList.toggle("open");
