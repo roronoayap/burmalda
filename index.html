@@ -119,9 +119,10 @@
   .calc .formula{color:var(--mute); font-size:13px;}
 
   /* Кнопка запису */
-  .record-btn{width:100%; padding:16px 0; background:var(--gold); border:none; border-radius:14px; color:#1d1607; font-size:16px; font-weight:800; box-shadow:0 6px 24px rgba(233,185,92,.18);}
+  .record-btn{width:100%; padding:16px 0; background:var(--gold); border:none; border-radius:14px; color:#1d1607; font-size:16px; font-weight:800; box-shadow:0 6px 24px rgba(233,185,92,.18); transition:background .15s;}
   .record-btn:disabled{opacity:.3; cursor:not-allowed; box-shadow:none;}
-  .record-btn.flash{background:#f4d189;}
+  @keyframes recordPop{0%{transform:scale(1);} 40%{transform:scale(1.035);} 100%{transform:scale(1);}}
+  .record-btn.flash{background:#f4d189; animation:recordPop .4s cubic-bezier(.34,1.56,.64,1);}
 
   /* Історія */
   .day{margin-bottom:20px;}
@@ -223,7 +224,18 @@
   .card-soon{border-style:dashed; border-color:#35343b; background:transparent;}
   .soon-note{color:var(--mute); font-size:14px; line-height:1.5;}
 
-  .rec{display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid #1c1b21;}
+  .rec{
+    display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid #1c1b21;
+    max-height:60px; overflow:hidden;
+    transition:opacity .22s ease, transform .22s ease, max-height .22s ease, padding .22s ease, margin .22s ease;
+  }
+  @keyframes recNew{
+    from{opacity:0; transform:translateX(-14px) scale(.97); max-height:0;}
+    to{opacity:1; transform:none; max-height:60px;}
+  }
+  .rec.rec-new{animation:recNew .38s cubic-bezier(.22,1,.36,1) both;}
+  .rec.rec-removing{opacity:0; transform:translateX(20px) scale(.96); max-height:0; padding-top:0; padding-bottom:0; margin:0; border-bottom-color:transparent;}
+  @media (prefers-reduced-motion: reduce){.rec.rec-new{animation:none;} .rec{transition:none;}}
   .rec-model{font-weight:600; font-size:14.5px; min-width:80px;}
   .rec-qty{flex:1; color:var(--mute); font-size:13.5px;}
   .rec-sum{font-weight:700; font-size:14.5px;}
@@ -346,11 +358,11 @@
       <div class="hero-stat-top">
         <div>
           <div class="section-label" style="margin-bottom:8px;">Всього здано</div>
-          <div class="stat-hero-value" id="totalAllQty">0<span class="unit">шт</span></div>
+          <div class="stat-hero-value"><span id="totalAllQty">0</span><span class="unit">шт</span></div>
         </div>
         <div class="hero-stat-icon">📦</div>
       </div>
-      <div class="hero-stat-foot" id="totalAllFoot"></div>
+      <div class="hero-stat-foot"><b id="totalAllSumVal">0 ₴</b><span>нараховано за весь час</span></div>
     </div>
 
     <div class="card">
@@ -443,19 +455,43 @@ const MONTHS_NOM = ["Січень","Лютий","Березень","Квітен
 let records = [];
 let rates = { ...DEFAULT_RATES };
 let sheetUrl = "";
+let batchCounter = 1;
 let selType = "IP";
 let selModel = null;
 let qty = 1;
+let lastAddedId = null;
 
 // ─── Утиліти ──────────────────────────────────────────────────
 const fmt = n => n.toLocaleString("uk-UA").replace(/,/g," ");
 const pad = n => String(n).padStart(2,"0");
+const pad5 = n => String(n).padStart(5,"0");
 const dateKeyOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const todayKey = () => dateKeyOf(new Date());
 const monthKey = s => s.slice(0,7);
 const prettyDate = s => { const [,m,d] = s.split("-").map(Number); return `${d} ${MONTHS[m-1]}`; };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const toDate = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+
+// Плавна анімація числа від поточного значення до нового
+function animateValue(el, to, opts={}){
+  if(!el) return;
+  const prev = Number(el.dataset.animVal || 0);
+  el.dataset.animVal = to;
+  const prefix = opts.prefix || "", suffix = opts.suffix || "";
+  if(prev === to){ el.textContent = prefix + fmt(to) + suffix; return; }
+  if(el._raf) cancelAnimationFrame(el._raf);
+  const start = performance.now();
+  const duration = opts.duration || 650;
+  const diff = to - prev;
+  function tick(now){
+    const p = Math.min((now-start)/duration, 1);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = prefix + fmt(Math.round(prev + diff*eased)) + suffix;
+    if(p < 1) el._raf = requestAnimationFrame(tick);
+    else el._raf = null;
+  }
+  el._raf = requestAnimationFrame(tick);
+}
 
 // ─── Статистика ───────────────────────────────────────────────
 const EARLIEST_DATE = new Date(2026, 4, 1); // 1 травня 2026
@@ -487,6 +523,14 @@ function periodRange(period){
 }
 function inRange(dateStr, range){ if(!range) return true; const dt = toDate(dateStr); return dt>=range.start && dt<=range.end; }
 
+function initBatchCounter(){
+  let max = 0;
+  for(const r of records){
+    const m = /^batchid-(\d+)$/.exec(r.id || "");
+    if(m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  return max + 1;
+}
 function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -495,11 +539,14 @@ function load(){
       records = data.records || [];
       rates = { ...DEFAULT_RATES, ...(data.rates||{}) };
       sheetUrl = data.sheetUrl || "";
+      batchCounter = data.batchCounter || initBatchCounter();
+    } else {
+      batchCounter = 1;
     }
   }catch(e){}
 }
 function persist(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({records, rates, sheetUrl})); }catch(e){}
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({records, rates, sheetUrl, batchCounter})); }catch(e){}
 }
 
 // ─── Рендер ───────────────────────────────────────────────────
@@ -525,8 +572,8 @@ function renderStatsScreen(){
 function renderTotalAll(){
   const qty = records.reduce((s,r)=>s+r.qty,0);
   const sum = records.reduce((s,r)=>s+r.qty*(r.rate??0),0);
-  document.getElementById("totalAllQty").innerHTML = `${qty}<span class="unit">шт</span>`;
-  document.getElementById("totalAllFoot").innerHTML = `<b>${fmt(sum)} ₴</b><span>нараховано за весь час</span>`;
+  animateValue(document.getElementById("totalAllQty"), qty);
+  animateValue(document.getElementById("totalAllSumVal"), sum, { suffix:" ₴" });
 }
 
 // ── Картка 2: Динаміка здачі ───────────────────────────────────
@@ -740,8 +787,8 @@ function renderStats(){
     if(monthKey(r.date) === curMonth){ monthSum += amount; monthCount += r.qty; byType[r.type] = (byType[r.type]||0)+r.qty; }
     if(r.date === tk) todaySum += amount;
   }
-  document.getElementById("monthSum").textContent = fmt(monthSum);
-  document.getElementById("todaySum").textContent = `+${fmt(todaySum)} ₴`;
+  animateValue(document.getElementById("monthSum"), monthSum);
+  animateValue(document.getElementById("todaySum"), todaySum, { prefix:"+", suffix:" ₴" });
   document.getElementById("typeSplit").innerHTML =
     TYPES.map(t => `<span class="item"><span class="dot" style="background:${HUE[t]}"></span><span class="muted">${t}</span><b>${byType[t]||0}</b></span>`).join("") +
     `<span class="item" style="margin-left:auto"><span class="muted">разом</span><b>${monthCount} шт</b></span>`;
@@ -806,7 +853,7 @@ function renderHistory(){
     const daySum = recs.reduce((s,r)=>s+r.qty*(r.rate??0),0);
     const dayQty = recs.reduce((s,r)=>s+r.qty,0);
     const rows = recs.map(r=>`
-      <div class="rec">
+      <div class="rec${r.id===lastAddedId ? " rec-new":""}">
         <span class="dot" style="background:${HUE[r.type]||"#777"}"></span>
         <span class="rec-model">${esc(r.model||r.type)}</span>
         <span class="rec-qty">${r.qty} × ${r.rate} ₴</span>
@@ -821,6 +868,15 @@ function renderHistory(){
   }).join("");
   el.querySelectorAll(".del").forEach(b =>
     b.onclick = () => {
+      const row = b.closest(".rec");
+      if(row){
+        row.classList.add("rec-removing");
+        setTimeout(() => {
+          records = records.filter(r => r.id !== b.dataset.id);
+          persist(); pushToSheet(); renderStats(); renderChart(); renderHistory(); renderStatsScreen();
+        }, 220);
+        return;
+      }
       records = records.filter(r => r.id !== b.dataset.id);
       persist(); pushToSheet(); renderStats(); renderChart(); renderHistory(); renderStatsScreen();
     }
@@ -942,10 +998,13 @@ document.getElementById("settingsBtn").onclick = () => {
 };
 document.getElementById("recordBtn").onclick = () => {
   if(!selModel || qty<1) return;
+  const newId = `batchid-${pad5(batchCounter)}`;
   records.unshift({
-    id: Date.now()+"-"+Math.random().toString(36).slice(2,6),
+    id: newId,
     date: todayKey(), type: selType, model: selModel, qty, rate: rates[selType],
   });
+  batchCounter++;
+  lastAddedId = newId;
   persist();
   pushToSheet();
   qty = 1;
@@ -953,6 +1012,7 @@ document.getElementById("recordBtn").onclick = () => {
   const btn = document.getElementById("recordBtn");
   btn.textContent = "Записано ✓"; btn.classList.add("flash");
   setTimeout(renderQty, 1100);
+  setTimeout(() => { lastAddedId = null; }, 900);
 };
 
 // ─── Старт ────────────────────────────────────────────────────
