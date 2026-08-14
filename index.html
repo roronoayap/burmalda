@@ -822,7 +822,7 @@ function renderHistory(){
   el.querySelectorAll(".del").forEach(b =>
     b.onclick = () => {
       records = records.filter(r => r.id !== b.dataset.id);
-      persist(); renderStats(); renderChart(); renderHistory(); renderStatsScreen();
+      persist(); pushToSheet(); renderStats(); renderChart(); renderHistory(); renderStatsScreen();
     }
   );
 }
@@ -838,8 +838,8 @@ function renderSettings(){
     <div class="sheet-block">
       <input class="sheet-url-input" type="url" id="sheetUrlInput" placeholder="Встав посилання з Apps Script" value="${esc(sheetUrl)}">
       <div class="sync-row">
-        <button class="sync-btn" id="syncBtn">Синхронізувати</button>
-        <span class="sync-status" id="syncStatus">${sheetUrl ? "Готово до синхронізації" : "Спочатку встав посилання"}</span>
+        <button class="sync-btn" id="syncBtn">Оновити зараз</button>
+        <span class="sync-status" id="syncStatus">${sheetUrl ? "Автооновлення увімкнено" : "Спочатку встав посилання"}</span>
       </div>
     </div>`;
   document.querySelectorAll("#settings .rate-input").forEach(inp =>
@@ -848,38 +848,78 @@ function renderSettings(){
       persist(); renderStats(); renderSegment(); renderQty(); renderStatsScreen();
     }
   );
-  document.getElementById("sheetUrlInput").oninput = (e) => { sheetUrl = e.target.value.trim(); persist(); };
-  document.getElementById("syncBtn").onclick = syncToSheets;
+  document.getElementById("sheetUrlInput").oninput = (e) => {
+    sheetUrl = e.target.value.trim();
+    persist();
+    startAutoSync();
+  };
+  document.getElementById("syncBtn").onclick = () => {
+    pushToSheet();
+    setSyncStatus("Оновлюю…");
+    setTimeout(() => fetchFromSheet(true), 1200);
+  };
 }
 
-function syncToSheets(){
-  const status = document.getElementById("syncStatus");
-  const btn = document.getElementById("syncBtn");
-  if(!sheetUrl){
-    status.textContent = "Спочатку встав посилання";
-    status.className = "sync-status err";
-    return;
-  }
-  btn.disabled = true;
-  status.textContent = "Синхронізую…";
-  status.className = "sync-status";
+function setSyncStatus(text, kind){
+  const el = document.getElementById("syncStatus");
+  if(!el) return;
+  el.textContent = text;
+  el.className = "sync-status" + (kind ? " "+kind : "");
+}
+function nowTimeStr(){
+  return new Date().toLocaleTimeString("uk-UA", { hour:"2-digit", minute:"2-digit" });
+}
+
+// ─── Онлайн-синхронізація з Google Таблицею ────────────────────
+let autoSyncTimer = null;
+let lastLocalWriteAt = 0;
+const AUTO_SYNC_INTERVAL = 20000;   // раз на 20с, поки застосунок відкритий
+const LOCAL_WRITE_COOLDOWN = 5000;  // не тягнути з таблиці одразу після власного запису
+
+function startAutoSync(){
+  if(autoSyncTimer){ clearInterval(autoSyncTimer); autoSyncTimer = null; }
+  if(!sheetUrl) return;
+  fetchFromSheet();
+  autoSyncTimer = setInterval(() => {
+    if(document.visibilityState === "visible") fetchFromSheet();
+  }, AUTO_SYNC_INTERVAL);
+}
+
+// Надсилає поточні записи в таблицю (fire-and-forget, не чекає відповіді)
+function pushToSheet(){
+  lastLocalWriteAt = Date.now();
+  if(!sheetUrl) return;
   fetch(sheetUrl, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ type: "sync", records })
-  })
-    .then(() => {
-      const t = new Date().toLocaleTimeString("uk-UA", { hour:"2-digit", minute:"2-digit" });
-      status.textContent = `Надіслано о ${t} — перевір таблицю`;
-      status.className = "sync-status ok";
+  }).catch(() => {});
+}
+
+// Підтягує актуальні дані з таблиці — таблиця завжди має пріоритет
+function fetchFromSheet(force){
+  if(!sheetUrl) return;
+  if(!force && Date.now()-lastLocalWriteAt < LOCAL_WRITE_COOLDOWN) return;
+  setSyncStatus("Оновлюю…");
+  fetch(sheetUrl + (sheetUrl.includes("?") ? "&" : "?") + "t=" + Date.now())
+    .then(res => { if(!res.ok) throw new Error("HTTP "+res.status); return res.json(); })
+    .then(data => {
+      if(data && Array.isArray(data.records)){
+        records = data.records;
+        persist();
+        renderAll();
+        setSyncStatus(`Оновлено з таблиці о ${nowTimeStr()}`, "ok");
+      }
     })
     .catch(() => {
-      status.textContent = "Не вдалось з'єднатись. Дані збережені локально, спробуй ще раз.";
-      status.className = "sync-status err";
-    })
-    .finally(() => { btn.disabled = false; });
+      setSyncStatus("Немає зв'язку з таблицею — показую останні збережені дані.", "err");
+    });
 }
+
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible") fetchFromSheet();
+});
 
 // ─── Дії ──────────────────────────────────────────────────────
 function showView(view){
@@ -907,6 +947,7 @@ document.getElementById("recordBtn").onclick = () => {
     date: todayKey(), type: selType, model: selModel, qty, rate: rates[selType],
   });
   persist();
+  pushToSheet();
   qty = 1;
   renderStats(); renderChart(); renderHistory(); renderQty(); renderStatsScreen();
   const btn = document.getElementById("recordBtn");
@@ -917,6 +958,7 @@ document.getElementById("recordBtn").onclick = () => {
 // ─── Старт ────────────────────────────────────────────────────
 load();
 renderAll();
+startAutoSync();
 </script>
 </body>
 </html>
