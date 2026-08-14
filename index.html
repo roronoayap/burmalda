@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Мій звіт</title>
+
+<!-- Режим застосунку при додаванні на головний екран -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Мій звіт">
+<meta name="theme-color" content="#101014">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#ebe8e1; --mute:#8f8d86; --line:#26262b; --bg:#101014; --gold:#e9b95c;
+    --ip:#8ab4ff; --ip-soft:rgba(138,180,255,.14);
+    --an:#ffc966; --an-soft:rgba(255,201,102,.14);
+    --ra:#c9a0ff; --ra-soft:rgba(201,160,255,.14);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    min-height:100vh;
+    background:radial-gradient(90% 50% at 50% 0%, #17161c 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+    font-feature-settings:'tnum' 1;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .container{max-width:490px; margin:0 auto; padding:26px 18px;}
+  button{font-family:inherit; cursor:pointer; transition:opacity .12s, transform .06s, background .15s, color .15s, border-color .15s;}
+  button:active{transform:scale(.97);}
+  button:focus-visible, input:focus-visible{outline:2px solid #6f6a5c; outline-offset:2px;}
+
+  /* Шапка */
+  .header{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;}
+  .eyebrow{color:var(--mute); font-size:13px; letter-spacing:.4px; margin-bottom:4px;}
+  .title{font-size:22px; font-weight:700; letter-spacing:-.3px; font-family:'Space Grotesk',sans-serif;}
+  .icon-btn{width:40px; height:40px; border-radius:12px; background:#1a1a1f; border:1px solid var(--line); color:var(--gold); font-size:16px; font-weight:700;}
+
+  /* Налаштування */
+  .settings{border:1px solid var(--line); border-radius:16px; padding:6px 16px; margin-bottom:18px; background:#16161a; display:none;}
+  .settings.open{display:block;}
+  .settings-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:12px;}
+  .settings-row .left{display:flex; align-items:center; gap:8px;}
+  .rate-input{width:90px; text-align:right; background:#1d1d22; border:1px solid var(--line); border-radius:10px; padding:8px 10px; color:var(--ink); font-size:16px; font-weight:600; outline:none; font-family:inherit;}
+
+  .settings-divider{border-top:1px solid var(--line); margin-top:4px;}
+  .settings-label{font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--mute); padding-top:12px; margin-bottom:8px;}
+  .sheet-block{display:flex; flex-direction:column; gap:9px; padding-bottom:12px;}
+  .sheet-url-input{width:100%; background:#1d1d22; border:1px solid var(--line); border-radius:10px; padding:9px 11px; color:var(--ink); font-size:13.5px; outline:none; font-family:inherit;}
+  .sync-row{display:flex; align-items:center; gap:10px;}
+  .sync-btn{flex-shrink:0; padding:9px 16px; background:var(--gold); border:none; border-radius:10px; color:#1d1607; font-size:13.5px; font-weight:700;}
+  .sync-btn:disabled{opacity:.5;}
+  .sync-status{font-size:12px; color:var(--mute); flex:1; line-height:1.35;}
+  .sync-status.err{color:#e08a7d;}
+  .sync-status.ok{color:#8fd19e;}
+
+  /* Головна картка */
+  .hero{
+    background:linear-gradient(150deg,#1c1a20 0%,#151419 60%,#141318 100%);
+    border:1px solid #2b2a31; border-radius:22px; padding:20px 20px 16px;
+    margin-bottom:14px; box-shadow:0 12px 40px rgba(0,0,0,.35);
+    animation:rise .4s ease both;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion: reduce){.hero{animation:none;} .bar{transition:none !important;}}
+  .hero-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;}
+  .hero-label{color:var(--mute); font-size:13px; margin-bottom:6px;}
+  .big-sum{font-size:42px; font-weight:700; letter-spacing:-1px; line-height:1; font-family:'Space Grotesk',sans-serif;}
+  .big-sum .cur{font-size:24px; color:var(--gold); font-weight:500;}
+  .today-pill{display:flex; flex-direction:column; align-items:flex-end; gap:2px; background:rgba(233,185,92,.08); border:1px solid rgba(233,185,92,.25); border-radius:12px; padding:8px 12px; white-space:nowrap;}
+  .today-pill .cap{font-size:12px; color:#9a917d;}
+  .today-pill .val{font-weight:700; color:var(--gold);}
+
+  .chart{display:flex; align-items:flex-end; gap:5px; margin-top:18px; height:74px;}
+  .chart .col{flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; justify-content:flex-end;}
+  .bar{width:100%; max-width:18px; border-radius:4px; transition:height .35s cubic-bezier(.2,.8,.2,1);}
+  .bar-label{font-size:9.5px; font-weight:600; color:#55555c;}
+
+  .type-split{display:flex; gap:16px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid #232228; flex-wrap:wrap; font-size:14px;}
+  .type-split .item{display:flex; align-items:center; gap:6px;}
+  .type-split .item b{font-weight:700;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
+  .muted{color:var(--mute); font-size:14px;}
+
+  /* Картки */
+  .card{background:#15151a; border:1px solid #232228; border-radius:20px; padding:18px 18px 20px; margin-bottom:14px;}
+  .section-label{font-size:11.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--mute); margin-bottom:14px; font-family:'Space Grotesk',sans-serif;}
+
+  /* Сегмент типів */
+  .segment{display:flex; background:#1c1c21; border:1px solid var(--line); border-radius:13px; padding:3px; margin-bottom:12px;}
+  .segment button{flex:1; padding:9px 0; border-radius:10px; background:transparent; border:none; color:var(--mute); font-size:15px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:1px;}
+  .segment button small{font-size:11px; opacity:.75; font-weight:600;}
+  .segment button.active-IP{background:var(--ip-soft); color:var(--ip);}
+  .segment button.active-Analog{background:var(--an-soft); color:var(--an);}
+  .segment button.active-Radio{background:var(--ra-soft); color:var(--ra);}
+
+  /* Чипи моделей */
+  .models{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
+  .chip{background:transparent; border:1px solid #35343b; border-radius:999px; padding:9px 15px; color:#cfccc4; font-size:14.5px; font-weight:500;}
+  .chip.sel-IP{background:var(--ip-soft); border-color:var(--ip); color:var(--ip); font-weight:700;}
+  .chip.sel-Analog{background:var(--an-soft); border-color:var(--an); color:var(--an); font-weight:700;}
+  .chip.sel-Radio{background:var(--ra-soft); border-color:var(--ra); color:var(--ra); font-weight:700;}
+
+  /* Кількість */
+  .qty-row{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:16px;}
+  .stepper{display:flex; align-items:center; background:#1c1c21; border:1px solid var(--line); border-radius:13px;}
+  .stepper button{width:48px; height:48px; background:transparent; border:none; color:var(--ink); font-size:22px;}
+  .qty-val{min-width:36px; text-align:center; font-size:19px; font-weight:700; font-family:'Space Grotesk',sans-serif;}
+  .calc{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
+  .calc .sum{font-size:22px; font-weight:700; letter-spacing:-.3px; color:var(--gold); font-family:'Space Grotesk',sans-serif;}
+  .calc .formula{color:var(--mute); font-size:13px;}
+
+  /* Кнопка запису */
+  .record-btn{width:100%; padding:16px 0; background:var(--gold); border:none; border-radius:14px; color:#1d1607; font-size:16px; font-weight:800; box-shadow:0 6px 24px rgba(233,185,92,.18);}
+  .record-btn:disabled{opacity:.3; cursor:not-allowed; box-shadow:none;}
+  .record-btn.flash{background:#f4d189;}
+
+  /* Історія */
+  .day{margin-bottom:20px;}
+  .day-header{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; padding-bottom:8px; border-bottom:1px solid #232228;}
+  .day-date{font-size:15px; font-weight:700;}
+  .day-sum{color:var(--mute); font-size:13px;}
+  .day-sum b{color:#d8d5cd;}
+  /* Статистика */
+  .segment button.active{background:rgba(233,185,92,.14); color:var(--gold);}
+  .sub-segment{margin-bottom:16px;}
+  .stat-row{display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #1c1b21; font-size:14px; gap:10px;}
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row .name{color:#cfccc4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stat-row .sum{font-weight:700; white-space:nowrap; font-size:13px; color:var(--mute);}
+  .stat-bar-bg{flex:1; height:6px; background:#232228; border-radius:3px; overflow:hidden;}
+  .stat-bar-fill{height:100%; background:var(--gold); border-radius:3px;}
+
+  /* Картка 1 — Всього здано */
+  .hero-stat{
+    position:relative; overflow:hidden;
+    background:linear-gradient(150deg,#1c1a20 0%,#151419 60%,#141318 100%);
+    border:1px solid #2b2a31; box-shadow:0 12px 40px rgba(0,0,0,.35);
+    animation:rise .4s ease both;
+  }
+  .hero-stat::before{
+    content:""; position:absolute; top:-60px; right:-50px; width:190px; height:190px;
+    background:radial-gradient(circle, rgba(233,185,92,.20) 0%, rgba(233,185,92,0) 70%);
+    pointer-events:none;
+  }
+  .hero-stat-top{display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;}
+  .hero-stat-icon{
+    width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    background:rgba(233,185,92,.1); border:1px solid rgba(233,185,92,.25); font-size:20px; flex-shrink:0;
+  }
+  .stat-hero-value{font-size:46px; font-weight:700; letter-spacing:-1.2px; font-family:'Space Grotesk',sans-serif;
+    background:linear-gradient(150deg,#f4d189,var(--gold) 65%); -webkit-background-clip:text; background-clip:text; color:transparent;
+    line-height:1;}
+  .stat-hero-value .unit{font-size:19px; -webkit-text-fill-color:var(--ink); color:var(--ink); font-weight:600; margin-left:5px;}
+  .hero-stat-foot{display:flex; align-items:center; gap:8px; margin-top:16px; padding-top:14px; border-top:1px solid #232228; position:relative; z-index:1; font-size:13px; color:var(--mute); flex-wrap:wrap;}
+  .hero-stat-foot b{color:#d8d5cd; font-weight:700;}
+  .hero-stat-foot .sep{opacity:.5;}
+
+  /* Картка 2 — Динаміка */
+  .chart-nav{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+  .chart-nav-btn{
+    width:34px; height:34px; border-radius:11px; background:#1c1c21; border:1px solid var(--line);
+    color:var(--gold); font-size:17px; font-weight:700; display:flex; align-items:center; justify-content:center; line-height:1;
+  }
+  .chart-nav-btn:disabled{opacity:.25; color:var(--mute); cursor:default;}
+  .chart-nav-label{font-size:13px; font-weight:600; color:var(--mute); text-align:center; flex:1;}
+  .chart-detail{display:flex; align-items:baseline; gap:8px; margin-bottom:14px; flex-wrap:wrap; min-height:20px;}
+  .chart-detail .cd-period{font-weight:700; font-size:15px; color:var(--ink);}
+  .chart-detail .cd-sep{color:var(--mute); font-size:12px;}
+  .chart-detail .cd-qty{font-weight:700; color:var(--gold); font-size:15px;}
+  .chart-detail .cd-sum{color:var(--mute); font-size:13px;}
+  .chart-lg{height:96px; gap:6px;}
+  .chart-lg .bar{max-width:26px;}
+  .chart-lg .col{cursor:pointer; border-radius:8px; padding:2px 0; transition:background .2s;}
+  .chart-lg .col:active{background:rgba(255,255,255,.04);}
+  .chart-lg .col.col-sel .bar{box-shadow:0 0 10px rgba(233,185,92,.4);}
+
+  /* Картка 3 — Моделі */
+  .ios-select-row{display:flex; gap:10px; margin-bottom:18px;}
+  .ios-select{position:relative; flex:1;}
+  .ios-select select{
+    width:100%; appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    background:#1c1c21; border:1px solid var(--line); border-radius:13px;
+    padding:11px 32px 11px 14px; color:var(--ink); font-size:14.5px; font-weight:600;
+    font-family:inherit; outline:none;
+  }
+  .ios-select::after{
+    content:""; position:absolute; right:13px; top:50%; width:8px; height:8px;
+    border-right:2px solid var(--gold); border-bottom:2px solid var(--gold);
+    transform:translateY(-65%) rotate(45deg); pointer-events:none;
+  }
+  .date-range-row{display:flex; gap:10px; margin-bottom:18px;}
+  .date-input-wrap{flex:1; background:#1c1c21; border:1px solid var(--line); border-radius:13px; padding:8px 12px;}
+  .date-input-wrap label{display:block; font-size:11px; color:var(--mute); margin-bottom:2px;}
+  .date-input-wrap input[type=date]{
+    width:100%; background:transparent; border:none; color:var(--ink); font-size:13.5px; font-weight:600;
+    font-family:inherit; padding:0; outline:none; color-scheme:dark;
+  }
+  .chip-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+  .chip-row .chip{padding:7px 13px; font-size:13px;}
+  .chip.sel-all{background:rgba(233,185,92,.14); border-color:var(--gold); color:var(--gold); font-weight:700;}
+  .hbar-row{margin-bottom:15px;}
+  .hbar-row:last-child{margin-bottom:0;}
+  .hbar-top{display:flex; align-items:baseline; gap:8px; margin-bottom:7px;}
+  .hbar-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-bottom:1px;}
+  .hbar-name{font-weight:700; font-size:14.5px; color:#e4e1da; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .hbar-qty{font-weight:700; font-size:13.5px; color:var(--ink); white-space:nowrap;}
+  .hbar-sum{color:var(--mute); font-size:12px; font-weight:500; white-space:nowrap; margin-left:5px;}
+  .hbar-track{height:11px; background:#1c1c21; border:1px solid #232228; border-radius:6px; overflow:hidden;}
+  .hbar-fill{height:100%; border-radius:6px; transition:width .6s cubic-bezier(.22,1,.36,1); min-width:3px;}
+  .models-head{color:var(--mute); font-size:13px; margin-bottom:14px;}
+  .models-head b{color:var(--ink); font-weight:700;}
+
+
+  .card-soon{border-style:dashed; border-color:#35343b; background:transparent;}
+  .soon-note{color:var(--mute); font-size:14px; line-height:1.5;}
+
+  .rec{display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid #1c1b21;}
+  .rec-model{font-weight:600; font-size:14.5px; min-width:80px;}
+  .rec-qty{flex:1; color:var(--mute); font-size:13.5px;}
+  .rec-sum{font-weight:700; font-size:14.5px;}
+  .del{background:transparent; border:none; color:#5a5a60; font-size:14px; padding:4px 2px 4px 8px; opacity:.55;}
+  .empty{color:var(--mute); font-size:14px; line-height:1.5;}
+
+  /* Нижнє меню — liquid glass tab bar (Telegram/Instagram-style) */
+  .view{display:none;}
+  .view.active{display:block; animation:viewIn .46s cubic-bezier(.22,1,.36,1) both;}
+  @keyframes viewIn{
+    from{opacity:0; transform:translateY(14px) scale(.97);}
+    to{opacity:1; transform:none;}
+  }
+  @media (prefers-reduced-motion: reduce){.view.active{animation:none;}}
+  .container{padding-bottom:114px;}
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    display:flex; justify-content:center;
+    padding:0 18px calc(16px + env(safe-area-inset-bottom));
+    pointer-events:none;
+  }
+  .tabbar-inner{
+    position:relative; display:flex; width:100%; max-width:300px;
+    background:linear-gradient(180deg, rgba(40,39,46,.58), rgba(24,23,28,.66));
+    -webkit-backdrop-filter:blur(30px) saturate(200%); backdrop-filter:blur(30px) saturate(200%);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:28px; padding:5px;
+    box-shadow:0 16px 38px rgba(0,0,0,.42), 0 3px 10px rgba(0,0,0,.3),
+      inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.2);
+    pointer-events:auto; overflow:hidden;
+  }
+  .tabbar-inner::before{
+    content:""; position:absolute; top:0; left:8%; right:8%; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+    pointer-events:none;
+  }
+  .tab-indicator{
+    position:absolute; top:5px; bottom:5px; left:5px;
+    width:calc(50% - 5px); border-radius:22px;
+    background:linear-gradient(155deg, rgba(233,185,92,.26), rgba(233,185,92,.1));
+    border:1px solid rgba(233,185,92,.34);
+    box-shadow:0 4px 16px rgba(233,185,92,.16), inset 0 1px 0 rgba(255,255,255,.16);
+    transition:transform .5s cubic-bezier(.34,1.42,.4,1);
+    will-change:transform;
+  }
+  .tab-btn{
+    position:relative; z-index:1;
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:transparent; border:none; padding:10px 0 9px; color:var(--mute); font-size:11px; font-weight:600;
+    transition:color .3s ease;
+  }
+  .tab-icon-wrap{position:relative; width:23px; height:23px;}
+  .tab-icon-wrap svg{
+    position:absolute; inset:0; width:23px; height:23px;
+    transition:opacity .25s ease, transform .45s cubic-bezier(.34,1.56,.64,1);
+  }
+  .tab-icon-wrap .ti-filled{opacity:0;}
+  .tab-btn.active .tab-icon-wrap .ti-outline{opacity:0;}
+  .tab-btn.active .tab-icon-wrap .ti-filled{opacity:1;}
+  .tab-btn.active .tab-icon-wrap svg{transform:translateY(-1px) scale(1.1);}
+  .tab-btn.active{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div>
+      <div class="eyebrow" id="eyebrow"></div>
+      <div class="title">Мій звіт</div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="Ставки">₴</button>
+  </div>
+
+  <div class="settings" id="settings"></div>
+
+  <div class="view active" id="viewHome">
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-label">Нараховано за місяць</div>
+          <div class="big-sum"><span id="monthSum">0</span><span class="cur"> ₴</span></div>
+        </div>
+        <div class="today-pill">
+          <span class="cap">сьогодні</span>
+          <span class="val" id="todaySum">+0 ₴</span>
+        </div>
+      </div>
+      <div class="chart" id="chart"></div>
+      <div class="type-split" id="typeSplit"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Новий запис</div>
+      <div class="segment" id="segment"></div>
+      <div class="models" id="models"></div>
+      <div class="qty-row">
+        <div class="stepper">
+          <button id="minus" aria-label="Менше">−</button>
+          <div class="qty-val" id="qtyVal">1</div>
+          <button id="plus" aria-label="Більше">+</button>
+        </div>
+        <div class="calc">
+          <span class="formula" id="formula"></span>
+          <span class="sum" id="calcSum"></span>
+        </div>
+      </div>
+      <button class="record-btn" id="recordBtn" disabled>Оберіть модель</button>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Історія</div>
+      <div id="history"></div>
+    </div>
+  </div>
+
+  <div class="view" id="viewStats">
+
+    <div class="card hero-stat">
+      <div class="hero-stat-top">
+        <div>
+          <div class="section-label" style="margin-bottom:8px;">Всього здано</div>
+          <div class="stat-hero-value" id="totalAllQty">0<span class="unit">шт</span></div>
+        </div>
+        <div class="hero-stat-icon">📦</div>
+      </div>
+      <div class="hero-stat-foot" id="totalAllFoot"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Динаміка здачі</div>
+      <div class="segment sub-segment" id="chartViewSegment"></div>
+      <div class="chart-nav" id="chartNav">
+        <button class="chart-nav-btn" id="chartPrev" aria-label="Назад">‹</button>
+        <span class="chart-nav-label" id="chartNavLabel"></span>
+        <button class="chart-nav-btn" id="chartNext" aria-label="Вперед">›</button>
+      </div>
+      <div class="chart-detail" id="chartDetail"></div>
+      <div class="chart chart-lg" id="statChart"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Моделі</div>
+      <div class="ios-select-row">
+        <div class="ios-select">
+          <select id="modelsRangeSelect">
+            <option value="all">Весь час</option>
+            <option value="month">Місяць</option>
+            <option value="week">Тиждень</option>
+            <option value="custom">Обрати період</option>
+          </select>
+        </div>
+      </div>
+      <div class="date-range-row" id="customRangeRow" style="display:none">
+        <div class="date-input-wrap">
+          <label>з</label>
+          <input type="date" id="rangeFrom">
+        </div>
+        <div class="date-input-wrap">
+          <label>по</label>
+          <input type="date" id="rangeTo">
+        </div>
+      </div>
+      <div class="chip-row" id="modelsTypeChips"></div>
+      <div class="ios-select-row" id="modelSelectRow" style="display:none">
+        <div class="ios-select">
+          <select id="modelsModelSelect"></select>
+        </div>
+      </div>
+      <div class="models-head" id="modelsHead"></div>
+      <div id="modelsList"></div>
+    </div>
+
+    <div class="card card-soon">
+      <div class="section-label">У розробці</div>
+      <div class="soon-note">🛠️ Ще визначаюсь з ідеєю для цього графіка — з'явиться тут пізніше.</div>
+    </div>
+
+  </div>
+
+</div>
+
+<nav class="tabbar">
+  <div class="tabbar-inner">
+    <div class="tab-indicator" id="tabIndicator"></div>
+    <button class="tab-btn active" data-view="home">
+      <span class="tab-icon-wrap">
+        <svg class="ti-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.3V19a1.2 1.2 0 0 0 1.2 1.2H9.8v-5.6a1 1 0 0 1 1-1h2.4a1 1 0 0 1 1 1v5.6h3.1A1.2 1.2 0 0 0 18.5 19V9.3"/></svg>
+        <svg class="ti-filled" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3 2.6 10.7a1 1 0 0 0 1.27 1.55L4.5 11.9V19a1.6 1.6 0 0 0 1.6 1.6H9.6v-5.7a1 1 0 0 1 1-1h2.8a1 1 0 0 1 1 1v5.7h3.5A1.6 1.6 0 0 0 19.5 19v-7.1l.63.35a1 1 0 0 0 1.27-1.55z"/></svg>
+      </span>
+      <span>Головна</span>
+    </button>
+    <button class="tab-btn" data-view="stats">
+      <span class="tab-icon-wrap">
+        <svg class="ti-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12.5" width="4" height="7.5" rx="1.1"/><rect x="10" y="7.5" width="4" height="12.5" rx="1.1"/><rect x="16" y="3.5" width="4" height="16.5" rx="1.1"/></svg>
+        <svg class="ti-filled" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="12.5" width="4" height="7.5" rx="1.3"/><rect x="10" y="7.5" width="4" height="12.5" rx="1.3"/><rect x="16" y="3.5" width="4" height="16.5" rx="1.3"/></svg>
+      </span>
+      <span>Статистика</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+// ─── Дані ─────────────────────────────────────────────────────
+const STORAGE_KEY = "zp-tracker-v1";
+const DEFAULT_RATES = { IP: 450, Analog: 350, Radio: 350 };
+const TYPES = ["IP", "Analog", "Radio"];
+const MODELS = {
+  IP: ["IP 10/15","IP 10/20","IP 13/23","IP 13/20","IP 15/30"],
+  Analog: ["A 10/15","A 10/20","A 13/15","A 13/20","A 13/23","A 15/30"],
+  Radio: ["R 7 Plus","R 9 Ultra","R 10","R 13","R 15"],
+};
+const HUE = { IP:"var(--ip)", Analog:"var(--an)", Radio:"var(--ra)" };
+const MONTHS = ["січня","лютого","березня","квітня","травня","червня","липня","серпня","вересня","жовтня","листопада","грудня"];
+const MONTHS_NOM = ["Січень","Лютий","Березень","Квітень","Травень","Червень","Липень","Серпень","Вересень","Жовтень","Листопад","Грудень"];
+
+let records = [];
+let rates = { ...DEFAULT_RATES };
+let sheetUrl = "";
+let selType = "IP";
+let selModel = null;
+let qty = 1;
+
+// ─── Утиліти ──────────────────────────────────────────────────
+const fmt = n => n.toLocaleString("uk-UA").replace(/,/g," ");
+const pad = n => String(n).padStart(2,"0");
+const dateKeyOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayKey = () => dateKeyOf(new Date());
+const monthKey = s => s.slice(0,7);
+const prettyDate = s => { const [,m,d] = s.split("-").map(Number); return `${d} ${MONTHS[m-1]}`; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const toDate = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+
+// ─── Статистика ───────────────────────────────────────────────
+const EARLIEST_DATE = new Date(2026, 4, 1); // 1 травня 2026
+let chartView = "month";      // month | week | day
+let chartOffset = 0;          // 0 = поточний період, 1 = на одну сторінку раніше, ...
+let chartSelectedIndex = null;
+let statChartData = [];
+let modelsRange = "all";      // all | month | week | custom
+let modelsCustomFrom = null;  // "YYYY-MM-DD"
+let modelsCustomTo = null;
+let modelsTypeFilter = "all"; // all | IP | Analog | Radio
+let modelsModelFilter = "all"; // all | конкретна модель
+
+function startOfWeek(d){ const day=(d.getDay()+6)%7; const s=new Date(d); s.setDate(d.getDate()-day); s.setHours(0,0,0,0); return s; }
+function isoWeekKey(d){
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = (date.getUTCDay()+6)%7;
+  date.setUTCDate(date.getUTCDate()-dayNum+3);
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
+  const week = 1 + Math.round(((date-firstThursday)/86400000 - 3 + ((firstThursday.getUTCDay()+6)%7))/7);
+  return `${date.getUTCFullYear()}-W${pad(week)}`;
+}
+function monthKeyOf(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}`; }
+function periodRange(period){
+  const now = new Date();
+  if(period==="week"){ const s=startOfWeek(now); const e=new Date(s); e.setDate(s.getDate()+6); e.setHours(23,59,59,999); return {start:s,end:e}; }
+  if(period==="month"){ const s=new Date(now.getFullYear(),now.getMonth(),1); const e=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59); return {start:s,end:e}; }
+  return null;
+}
+function inRange(dateStr, range){ if(!range) return true; const dt = toDate(dateStr); return dt>=range.start && dt<=range.end; }
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      records = data.records || [];
+      rates = { ...DEFAULT_RATES, ...(data.rates||{}) };
+      sheetUrl = data.sheetUrl || "";
+    }
+  }catch(e){}
+}
+function persist(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({records, rates, sheetUrl})); }catch(e){}
+}
+
+// ─── Рендер ───────────────────────────────────────────────────
+function renderAll(){
+  const now = new Date();
+  document.getElementById("eyebrow").textContent = `${MONTHS_NOM[now.getMonth()]} ${now.getFullYear()}`;
+  renderStats(); renderChart(); renderSegment(); renderModels(); renderQty(); renderHistory(); renderSettings();
+  renderStatsScreen();
+}
+
+function renderStatsScreen(){
+  renderTotalAll();
+  renderChartViewSegment();
+  renderStatChart();
+  renderModelsRangeSelect();
+  setupCustomRangeInputs();
+  renderModelsTypeChips();
+  renderModelSelect();
+  renderModelsData();
+}
+
+// ── Картка 1: Всього здано ─────────────────────────────────────
+function renderTotalAll(){
+  const qty = records.reduce((s,r)=>s+r.qty,0);
+  const sum = records.reduce((s,r)=>s+r.qty*(r.rate??0),0);
+  document.getElementById("totalAllQty").innerHTML = `${qty}<span class="unit">шт</span>`;
+  document.getElementById("totalAllFoot").innerHTML = `<b>${fmt(sum)} ₴</b><span>нараховано за весь час</span>`;
+}
+
+// ── Картка 2: Динаміка здачі ───────────────────────────────────
+function renderChartViewSegment(){
+  const opts = [["day","По днях"],["week","По тижнях"],["month","По місяцях"]];
+  document.getElementById("chartViewSegment").innerHTML = opts.map(([k,label])=>
+    `<button data-chartview="${k}" class="${chartView===k?"active":""}">${label}</button>`
+  ).join("");
+  document.querySelectorAll("#chartViewSegment button").forEach(b =>
+    b.onclick = () => { chartView = b.dataset.chartview; chartOffset = 0; chartSelectedIndex = null; renderChartViewSegment(); renderStatChart(); }
+  );
+}
+
+// Будує N періодів, що закінчуються на referenceDate - offset*N періодів
+function buildChartBuckets(view, offset){
+  const buckets = [];
+  if(view==="month"){
+    const now = new Date();
+    for(let i=5;i>=0;i--){
+      const d = new Date(now.getFullYear(), now.getMonth() - offset*6 - i, 1);
+      const key = monthKeyOf(d);
+      buckets.push({ start:d, label: MONTHS_NOM[d.getMonth()].slice(0,3), full: `${MONTHS_NOM[d.getMonth()]} ${d.getFullYear()}`, match: r => monthKey(r.date)===key });
+    }
+  } else if(view==="week"){
+    const cur = startOfWeek(new Date());
+    for(let i=7;i>=0;i--){
+      const s = new Date(cur); s.setDate(cur.getDate() - offset*8*7 - i*7);
+      const e = new Date(s); e.setDate(s.getDate()+6);
+      const key = isoWeekKey(s);
+      buckets.push({ start:s, label: `${s.getDate()}.${pad(s.getMonth()+1)}`, full: `${s.getDate()} ${MONTHS[s.getMonth()]} – ${e.getDate()} ${MONTHS[e.getMonth()]}`, match: r => isoWeekKey(toDate(r.date))===key });
+    }
+  } else {
+    const today = new Date(); today.setHours(0,0,0,0);
+    for(let i=13;i>=0;i--){
+      const d = new Date(today); d.setDate(today.getDate() - offset*14 - i);
+      const key = dateKeyOf(d);
+      buckets.push({ start:d, label: String(d.getDate()), full: `${prettyDate(key)}${key===todayKey()?" · сьогодні":""}`, match: r => r.date===key });
+    }
+  }
+  return buckets;
+}
+
+function renderStatChart(){
+  const buckets = buildChartBuckets(chartView, chartOffset);
+  statChartData = buckets.map(b => ({ ...b, qty:0, sum:0 }));
+  for(const r of records){
+    const b = statChartData.find(x => x.match(r));
+    if(b){ b.qty += r.qty; b.sum += r.qty*(r.rate??0); }
+  }
+  if(chartSelectedIndex===null || chartSelectedIndex>=statChartData.length) chartSelectedIndex = statChartData.length-1;
+
+  const max = Math.max(...statChartData.map(b=>b.qty),1);
+  document.getElementById("statChart").innerHTML = statChartData.map((b,i)=>{
+    const sel = i===chartSelectedIndex;
+    const h = b.qty>0 ? Math.max(Math.round(b.qty/max*72),4) : 3;
+    const color = sel ? "var(--gold)" : (b.qty>0 ? "#5d5749" : "#26262b");
+    const labelColor = sel ? "var(--gold)" : "#55555c";
+    return `<div class="col ${sel?"col-sel":""}" data-idx="${i}">
+      <div class="bar" style="height:${h}px;background:${color}"></div>
+      <div class="bar-label" style="color:${labelColor}">${b.label}</div>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("#statChart .col").forEach(el =>
+    el.onclick = () => { chartSelectedIndex = Number(el.dataset.idx); renderStatChart(); }
+  );
+  renderChartDetail();
+  renderChartNav(buckets);
+}
+
+function renderChartDetail(){
+  const b = statChartData[chartSelectedIndex];
+  document.getElementById("chartDetail").innerHTML = b ? `
+    <span class="cd-period">${b.full}</span>
+    <span class="cd-sep">·</span>
+    <span class="cd-qty">${b.qty} шт</span>
+    <span class="cd-sep">·</span>
+    <span class="cd-sum">${fmt(b.sum)} ₴</span>
+  ` : "";
+}
+
+function renderChartNav(buckets){
+  const first = buckets[0].start, last = buckets[buckets.length-1].start;
+  let label;
+  if(chartView==="month") label = `${MONTHS_NOM[first.getMonth()].slice(0,3)} ${first.getFullYear()} – ${MONTHS_NOM[last.getMonth()].slice(0,3)} ${last.getFullYear()}`;
+  else label = `${first.getDate()}.${pad(first.getMonth()+1)} – ${last.getDate()}.${pad(last.getMonth()+1)}.${last.getFullYear()}`;
+  document.getElementById("chartNavLabel").textContent = label;
+
+  const canGoNewer = chartOffset > 0;
+  const olderBuckets = buildChartBuckets(chartView, chartOffset+1);
+  const canGoOlder = olderBuckets[olderBuckets.length-1].start >= EARLIEST_DATE;
+
+  const prevBtn = document.getElementById("chartPrev");
+  const nextBtn = document.getElementById("chartNext");
+  prevBtn.disabled = !canGoOlder;
+  nextBtn.disabled = !canGoNewer;
+  prevBtn.onclick = () => { if(canGoOlder){ chartOffset++; chartSelectedIndex = null; renderStatChart(); } };
+  nextBtn.onclick = () => { if(canGoNewer){ chartOffset--; chartSelectedIndex = null; renderStatChart(); } };
+}
+
+// ── Картка 3: Моделі ────────────────────────────────────────────
+function renderModelsRangeSelect(){
+  const sel = document.getElementById("modelsRangeSelect");
+  sel.value = modelsRange;
+  document.getElementById("customRangeRow").style.display = modelsRange==="custom" ? "flex" : "none";
+  sel.onchange = () => {
+    modelsRange = sel.value;
+    if(modelsRange==="custom"){
+      if(!modelsCustomFrom) modelsCustomFrom = dateKeyOf(EARLIEST_DATE);
+      if(!modelsCustomTo) modelsCustomTo = todayKey();
+      document.getElementById("rangeFrom").value = modelsCustomFrom;
+      document.getElementById("rangeTo").value = modelsCustomTo;
+    }
+    document.getElementById("customRangeRow").style.display = modelsRange==="custom" ? "flex" : "none";
+    renderModelsData();
+  };
+}
+
+function setupCustomRangeInputs(){
+  const fromInp = document.getElementById("rangeFrom");
+  const toInp = document.getElementById("rangeTo");
+  const minStr = dateKeyOf(EARLIEST_DATE);
+  const maxStr = todayKey();
+  fromInp.min = minStr; fromInp.max = maxStr;
+  toInp.min = minStr; toInp.max = maxStr;
+  if(modelsCustomFrom) fromInp.value = modelsCustomFrom;
+  if(modelsCustomTo) toInp.value = modelsCustomTo;
+  fromInp.onchange = () => { modelsCustomFrom = fromInp.value || minStr; renderModelsData(); };
+  toInp.onchange = () => { modelsCustomTo = toInp.value || maxStr; renderModelsData(); };
+}
+
+function renderModelsTypeChips(){
+  const opts = [["all","Всі"], ...TYPES.map(t=>[t,t])];
+  document.getElementById("modelsTypeChips").innerHTML = opts.map(([k,label])=>{
+    const cls = modelsTypeFilter===k ? (k==="all" ? "sel-all" : "sel-"+k) : "";
+    return `<button data-type="${k}" class="chip ${cls}">${label}</button>`;
+  }).join("");
+  document.querySelectorAll("#modelsTypeChips .chip").forEach(b =>
+    b.onclick = () => {
+      modelsTypeFilter = b.dataset.type;
+      modelsModelFilter = "all";
+      renderModelsTypeChips();
+      renderModelSelect();
+      renderModelsData();
+    }
+  );
+}
+
+function renderModelSelect(){
+  const row = document.getElementById("modelSelectRow");
+  if(modelsTypeFilter==="all"){ row.style.display = "none"; return; }
+  row.style.display = "";
+  const sel = document.getElementById("modelsModelSelect");
+  const models = MODELS[modelsTypeFilter] || [];
+  sel.innerHTML = `<option value="all">Усі моделі ${modelsTypeFilter}</option>` +
+    models.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  sel.value = modelsModelFilter;
+  sel.onchange = () => { modelsModelFilter = sel.value; renderModelsData(); };
+}
+
+function modelsCustomRange(){
+  const from = modelsCustomFrom || dateKeyOf(EARLIEST_DATE);
+  const to = modelsCustomTo || todayKey();
+  const end = toDate(to); end.setHours(23,59,59,999);
+  return { start: toDate(from), end };
+}
+
+function renderModelsData(){
+  let range;
+  if(modelsRange==="all") range = null;
+  else if(modelsRange==="custom") range = modelsCustomRange();
+  else range = periodRange(modelsRange);
+
+  let filtered = records.filter(r => inRange(r.date, range));
+  if(modelsTypeFilter!=="all") filtered = filtered.filter(r => r.type===modelsTypeFilter);
+  if(modelsTypeFilter!=="all" && modelsModelFilter!=="all") filtered = filtered.filter(r => (r.model||r.type)===modelsModelFilter);
+
+  const map = {};
+  for(const r of filtered){
+    const key = r.model || r.type;
+    (map[key] ||= { type:r.type, qty:0, sum:0 });
+    map[key].qty += r.qty;
+    map[key].sum += r.qty*(r.rate??0);
+  }
+  const entries = Object.entries(map).sort((a,b)=> b[1].qty - a[1].qty);
+  document.getElementById("modelsHead").innerHTML = `Використано моделей: <b>${entries.length}</b>`;
+
+  const maxQty = Math.max(...entries.map(([,v])=>v.qty),1);
+  const el = document.getElementById("modelsList");
+  el.innerHTML = entries.length ? entries.map(([name,v])=>{
+    const pct = Math.round(v.qty/maxQty*100);
+    const color = HUE[v.type] || "var(--gold)";
+    return `<div class="hbar-row">
+      <div class="hbar-top">
+        <span class="hbar-dot" style="background:${color}"></span>
+        <span class="hbar-name">${esc(name)}</span>
+        <span class="hbar-qty">${v.qty} шт<span class="hbar-sum">${fmt(v.sum)} ₴</span></span>
+      </div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%; background:${color}"></div></div>
+    </div>`;
+  }).join("") : `<div class="empty">Немає записів за цей період.</div>`;
+}
+
+function renderStats(){
+  const now = new Date();
+  const curMonth = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+  const tk = todayKey();
+  let monthSum=0, monthCount=0, todaySum=0;
+  const byType = { IP:0, Analog:0, Radio:0 };
+  for(const r of records){
+    const amount = r.qty * (r.rate ?? rates[r.type] ?? 0);
+    if(monthKey(r.date) === curMonth){ monthSum += amount; monthCount += r.qty; byType[r.type] = (byType[r.type]||0)+r.qty; }
+    if(r.date === tk) todaySum += amount;
+  }
+  document.getElementById("monthSum").textContent = fmt(monthSum);
+  document.getElementById("todaySum").textContent = `+${fmt(todaySum)} ₴`;
+  document.getElementById("typeSplit").innerHTML =
+    TYPES.map(t => `<span class="item"><span class="dot" style="background:${HUE[t]}"></span><span class="muted">${t}</span><b>${byType[t]||0}</b></span>`).join("") +
+    `<span class="item" style="margin-left:auto"><span class="muted">разом</span><b>${monthCount} шт</b></span>`;
+}
+
+function renderChart(){
+  const days = [];
+  for(let i=13;i>=0;i--){ const d = new Date(); d.setDate(d.getDate()-i); days.push({key:dateKeyOf(d), sum:0, label:d.getDate()}); }
+  const map = Object.fromEntries(days.map(d=>[d.key,d]));
+  for(const r of records){ if(map[r.date]) map[r.date].sum += r.qty*(r.rate??0); }
+  const max = Math.max(...days.map(d=>d.sum),1);
+  const tk = todayKey();
+  document.getElementById("chart").innerHTML = days.map(d=>{
+    const h = Math.max(Math.round(d.sum/max*56),3);
+    const color = d.key===tk ? "var(--gold)" : d.sum>0 ? "#5d5749" : "#26262b";
+    const labelColor = d.key===tk ? "var(--gold)" : "#55555c";
+    return `<div class="col" title="${prettyDate(d.key)}: ${fmt(d.sum)} ₴">
+      <div class="bar" style="height:${h}px;background:${color}"></div>
+      <div class="bar-label" style="color:${labelColor}">${d.label}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderSegment(){
+  document.getElementById("segment").innerHTML = TYPES.map(t =>
+    `<button data-type="${t}" class="${selType===t ? "active-"+t : ""}">${t}<small>${rates[t]} ₴</small></button>`
+  ).join("");
+  document.querySelectorAll("#segment button").forEach(b =>
+    b.onclick = () => { selType = b.dataset.type; selModel = null; renderSegment(); renderModels(); renderQty(); }
+  );
+}
+
+function renderModels(){
+  document.getElementById("models").innerHTML = MODELS[selType].map(m =>
+    `<button data-model="${esc(m)}" class="chip ${selModel===m ? "sel-"+selType : ""}">${esc(m)}</button>`
+  ).join("");
+  document.querySelectorAll("#models .chip").forEach(b =>
+    b.onclick = () => { selModel = selModel===b.dataset.model ? null : b.dataset.model; renderModels(); renderQty(); }
+  );
+}
+
+function renderQty(){
+  document.getElementById("qtyVal").textContent = qty;
+  document.getElementById("formula").textContent = `${qty} × ${rates[selType]} ₴`;
+  document.getElementById("calcSum").textContent = `${fmt(qty*rates[selType])} ₴`;
+  const btn = document.getElementById("recordBtn");
+  btn.disabled = !selModel;
+  btn.textContent = selModel ? `Записати · ${selModel}` : "Оберіть модель";
+  btn.classList.remove("flash");
+}
+
+function renderHistory(){
+  const map = {};
+  for(const r of records) (map[r.date] ||= []).push(r);
+  const grouped = Object.entries(map).sort((a,b)=> a[0]<b[0]?1:-1);
+  const el = document.getElementById("history");
+  if(!grouped.length){
+    el.innerHTML = `<div class="empty">Поки порожньо. Зроби перший запис — і графік зверху почне оживати.</div>`;
+    return;
+  }
+  el.innerHTML = grouped.map(([date, recs])=>{
+    const daySum = recs.reduce((s,r)=>s+r.qty*(r.rate??0),0);
+    const dayQty = recs.reduce((s,r)=>s+r.qty,0);
+    const rows = recs.map(r=>`
+      <div class="rec">
+        <span class="dot" style="background:${HUE[r.type]||"#777"}"></span>
+        <span class="rec-model">${esc(r.model||r.type)}</span>
+        <span class="rec-qty">${r.qty} × ${r.rate} ₴</span>
+        <span class="rec-sum">${fmt(r.qty*r.rate)} ₴</span>
+        <button class="del" data-id="${r.id}" aria-label="Видалити">✕</button>
+      </div>`).join("");
+    return `<div class="day">
+      <div class="day-header">
+        <span class="day-date">${date===todayKey() ? "Сьогодні" : prettyDate(date)}</span>
+        <span class="day-sum">${dayQty} шт · <b>${fmt(daySum)} ₴</b></span>
+      </div>${rows}</div>`;
+  }).join("");
+  el.querySelectorAll(".del").forEach(b =>
+    b.onclick = () => {
+      records = records.filter(r => r.id !== b.dataset.id);
+      persist(); renderStats(); renderChart(); renderHistory(); renderStatsScreen();
+    }
+  );
+}
+
+function renderSettings(){
+  document.getElementById("settings").innerHTML = TYPES.map(t=>`
+    <div class="settings-row">
+      <span class="left"><span class="dot" style="background:${HUE[t]}"></span><span class="muted">${t}, за дрон</span></span>
+      <input class="rate-input" type="number" inputmode="numeric" data-type="${t}" value="${rates[t]}">
+    </div>`).join("") + `
+    <div class="settings-divider"></div>
+    <div class="settings-label">Google Таблиця</div>
+    <div class="sheet-block">
+      <input class="sheet-url-input" type="url" id="sheetUrlInput" placeholder="Встав посилання з Apps Script" value="${esc(sheetUrl)}">
+      <div class="sync-row">
+        <button class="sync-btn" id="syncBtn">Синхронізувати</button>
+        <span class="sync-status" id="syncStatus">${sheetUrl ? "Готово до синхронізації" : "Спочатку встав посилання"}</span>
+      </div>
+    </div>`;
+  document.querySelectorAll("#settings .rate-input").forEach(inp =>
+    inp.oninput = () => {
+      rates[inp.dataset.type] = Math.max(0, Number(inp.value)||0);
+      persist(); renderStats(); renderSegment(); renderQty(); renderStatsScreen();
+    }
+  );
+  document.getElementById("sheetUrlInput").oninput = (e) => { sheetUrl = e.target.value.trim(); persist(); };
+  document.getElementById("syncBtn").onclick = syncToSheets;
+}
+
+function syncToSheets(){
+  const status = document.getElementById("syncStatus");
+  const btn = document.getElementById("syncBtn");
+  if(!sheetUrl){
+    status.textContent = "Спочатку встав посилання";
+    status.className = "sync-status err";
+    return;
+  }
+  btn.disabled = true;
+  status.textContent = "Синхронізую…";
+  status.className = "sync-status";
+  fetch(sheetUrl, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ type: "sync", records })
+  })
+    .then(() => {
+      const t = new Date().toLocaleTimeString("uk-UA", { hour:"2-digit", minute:"2-digit" });
+      status.textContent = `Надіслано о ${t} — перевір таблицю`;
+      status.className = "sync-status ok";
+    })
+    .catch(() => {
+      status.textContent = "Не вдалось з'єднатись. Дані збережені локально, спробуй ще раз.";
+      status.className = "sync-status err";
+    })
+    .finally(() => { btn.disabled = false; });
+}
+
+// ─── Дії ──────────────────────────────────────────────────────
+function showView(view){
+  document.getElementById("viewHome").classList.toggle("active", view==="home");
+  document.getElementById("viewStats").classList.toggle("active", view==="stats");
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.view===view));
+  document.getElementById("tabIndicator").style.transform = `translateX(${view==="home" ? 0 : 100}%)`;
+  window.scrollTo(0,0);
+}
+document.querySelectorAll(".tab-btn").forEach(b =>
+  b.onclick = () => showView(b.dataset.view)
+);
+
+document.getElementById("minus").onclick = () => { qty = Math.max(1, qty-1); renderQty(); };
+document.getElementById("plus").onclick = () => { qty++; renderQty(); };
+document.getElementById("settingsBtn").onclick = () => {
+  const s = document.getElementById("settings");
+  s.classList.toggle("open");
+  document.getElementById("settingsBtn").textContent = s.classList.contains("open") ? "✕" : "₴";
+};
+document.getElementById("recordBtn").onclick = () => {
+  if(!selModel || qty<1) return;
+  records.unshift({
+    id: Date.now()+"-"+Math.random().toString(36).slice(2,6),
+    date: todayKey(), type: selType, model: selModel, qty, rate: rates[selType],
+  });
+  persist();
+  qty = 1;
+  renderStats(); renderChart(); renderHistory(); renderQty(); renderStatsScreen();
+  const btn = document.getElementById("recordBtn");
+  btn.textContent = "Записано ✓"; btn.classList.add("flash");
+  setTimeout(renderQty, 1100);
+};
+
+// ─── Старт ────────────────────────────────────────────────────
+load();
+renderAll();
+</script>
+</body>
+</html>
