@@ -290,6 +290,46 @@
   .time-session-row .tsr-date{color:#cfccc4;}
   .time-session-row .tsr-min{font-weight:700; color:var(--ink);}
   .time-session-row .tsr-del{background:transparent; border:none; color:#5a5a60; font-size:14px; padding:2px 2px 2px 10px; opacity:.55;}
+
+  /* Календар */
+  .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cal-nav-btn{width:34px; height:34px; border-radius:11px; background:#1c1c21; border:1px solid var(--line); color:var(--gold); font-size:17px; font-weight:700; line-height:1;}
+  .cal-nav-btn:disabled{opacity:.25; color:var(--mute);}
+  .cal-nav-label{font-size:14px; font-weight:700; color:var(--ink);}
+  .cal-weekdays{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:6px;}
+  .cal-weekdays span{text-align:center; font-size:10.5px; color:var(--mute); font-weight:600;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:14px;}
+  .cal-cell{
+    aspect-ratio:1; border-radius:10px; background:#1c1c21; border:1px solid var(--line);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    color:var(--ink); font-size:12px; font-weight:600; position:relative; padding:0;
+    transition:background .15s, border-color .15s;
+  }
+  .cal-cell.cal-empty{background:transparent; border:none;}
+  .cal-cell.cal-work{background:rgba(120,200,150,.16); border-color:rgba(120,200,150,.4); color:#8fd19e;}
+  .cal-cell.cal-off{background:rgba(224,138,125,.14); border-color:rgba(224,138,125,.35); color:#e08a7d;}
+  .cal-cell.cal-today{box-shadow:0 0 0 2px var(--gold);}
+  .cal-cell.cal-disabled{opacity:.25; pointer-events:none;}
+  .cal-dot{position:absolute; bottom:3px; width:4px; height:4px; border-radius:50%; background:var(--gold);}
+  .cal-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--mute);}
+  .cal-legend-item{display:flex; align-items:center; gap:6px;}
+  .cal-legend-item .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .cal-dot-work{background:#8fd19e;}
+  .cal-dot-off{background:#e08a7d;}
+
+  /* Серії */
+  .streak-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  /* Ціль на місяць */
+  .goal-input-row{position:relative; margin-bottom:16px;}
+  .goal-input-row .manual-time-input{width:100%; padding-right:36px;}
+  .goal-input-suffix{position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mute); font-size:14px; font-weight:600;}
+  .goal-bar-bg{height:12px; background:#1c1c21; border:1px solid var(--line); border-radius:7px; overflow:hidden; margin-bottom:10px;}
+  .goal-bar-fill{height:100%; background:var(--gold); border-radius:7px; transition:width .5s cubic-bezier(.22,1,.36,1);}
+  .goal-stats{font-size:13.5px; color:var(--ink); font-weight:600; margin-bottom:10px;}
+  .goal-note{font-size:13px; color:var(--mute); line-height:1.5;}
+  .goal-note b{color:var(--ink);}
+  .goal-note.goal-done{color:#8fd19e;}
   .date-input-wrap label{display:block; font-size:11px; color:var(--mute); margin-bottom:2px;}
   .date-input-wrap input[type=date]{
     width:100%; background:transparent; border:none; color:var(--ink); font-size:13.5px; font-weight:600;
@@ -605,6 +645,41 @@
       <div id="timeSessionsList"></div>
     </div>
 
+    <div class="card">
+      <div class="section-label">Календар</div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="calPrevBtn" aria-label="Попередній місяць">‹</button>
+        <span class="cal-nav-label" id="calendarLabel"></span>
+        <button class="cal-nav-btn" id="calNextBtn" aria-label="Наступний місяць">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Нд</span>
+      </div>
+      <div class="cal-grid" id="calendarGrid"></div>
+      <div class="cal-legend">
+        <span class="cal-legend-item"><span class="dot cal-dot-work"></span> робочий</span>
+        <span class="cal-legend-item"><span class="dot cal-dot-off"></span> вихідний</span>
+        <span class="cal-legend-item">тап по дню — позначити</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Серії</div>
+      <div class="streak-grid">
+        <div class="time-stat-box"><div class="label">Поточна серія</div><div class="value" id="streakCurrent">0 днів</div></div>
+        <div class="time-stat-box"><div class="label">Найкраща серія</div><div class="value" id="streakBest">0 днів</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Ціль на місяць</div>
+      <div class="goal-input-row">
+        <input type="number" inputmode="numeric" id="monthGoalInput" class="manual-time-input" placeholder="Наприклад, 30000">
+        <span class="goal-input-suffix">₴</span>
+      </div>
+      <div id="goalResult"></div>
+    </div>
+
   </div>
 
 </div>
@@ -770,6 +845,9 @@ let timerBaseElapsed = 0;   // мс, накопичені до поточног�
 let timerStartTs = null;    // час старту поточного відрізка (epoch ms)
 let timerTickHandle = null;
 let timeStatPeriod = "today"; // today | month | all
+let workDayMarks = {};      // {"YYYY-MM-DD": "work"|"off"}
+let calendarMonthOffset = 0;
+let monthGoal = 0;
 
 // ─── Утиліти ──────────────────────────────────────────────────
 const fmt = n => n.toLocaleString("uk-UA").replace(/,/g," ");
@@ -854,6 +932,8 @@ function load(){
       timerRunning = data.timerRunning || false;
       timerBaseElapsed = data.timerBaseElapsed || 0;
       timerStartTs = data.timerStartTs || null;
+      workDayMarks = data.workDayMarks || {};
+      monthGoal = data.monthGoal || 0;
     } else {
       batchCounter = 1;
       sheetUrl = DEFAULT_SHEET_URL;
@@ -864,7 +944,8 @@ function persist(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       records, rates, sheetUrl, batchCounter,
-      timeEntries, timerRunning, timerBaseElapsed, timerStartTs
+      timeEntries, timerRunning, timerBaseElapsed, timerStartTs,
+      workDayMarks, monthGoal
     }));
   }catch(e){}
 }
@@ -1157,6 +1238,133 @@ function renderTimeScreen(){
   if(timerRunning) startTimerTick();
   renderTimeStatSegment();
   renderTimeStats();
+  renderCalendar();
+  renderStreaks();
+  renderGoalCard();
+}
+
+// ── Календар робочих/вихідних днів ───────────────────────────────
+function isWorkDay(dateKey){
+  const mark = workDayMarks[dateKey];
+  if(mark === "off") return false;
+  if(mark === "work") return true;
+  return records.some(r => r.date === dateKey);
+}
+
+function toggleDayMark(dateKey){
+  const cur = workDayMarks[dateKey];
+  if(!cur) workDayMarks[dateKey] = "work";
+  else if(cur === "work") workDayMarks[dateKey] = "off";
+  else delete workDayMarks[dateKey];
+  persist();
+  renderCalendar();
+  renderStreaks();
+}
+
+function renderCalendar(){
+  const now = new Date();
+  const viewDate = new Date(now.getFullYear(), now.getMonth() + calendarMonthOffset, 1);
+  const year = viewDate.getFullYear(), month = viewDate.getMonth();
+  document.getElementById("calendarLabel").textContent = `${MONTHS_NOM[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay()+6)%7;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = todayKey();
+  const minDate = dateKeyOf(EARLIEST_DATE);
+
+  let cells = [];
+  for(let i=0;i<startOffset;i++) cells.push(`<div class="cal-cell cal-empty"></div>`);
+  for(let d=1; d<=daysInMonth; d++){
+    const dk = dateKeyOf(new Date(year, month, d));
+    const mark = workDayMarks[dk];
+    const hasRecord = records.some(r=>r.date===dk);
+    const isToday = dk === todayStr;
+    const isBlocked = dk > todayStr || dk < minDate;
+    let cls = "cal-cell";
+    if(mark==="work") cls += " cal-work";
+    else if(mark==="off") cls += " cal-off";
+    if(isToday) cls += " cal-today";
+    if(isBlocked) cls += " cal-disabled";
+    cells.push(`<button type="button" class="${cls}" data-date="${dk}"${isBlocked?" disabled":""}>
+      <span>${d}</span>${hasRecord ? '<span class="cal-dot"></span>' : ''}
+    </button>`);
+  }
+  document.getElementById("calendarGrid").innerHTML = cells.join("");
+  document.querySelectorAll("#calendarGrid .cal-cell[data-date]").forEach(btn =>
+    btn.onclick = () => toggleDayMark(btn.dataset.date)
+  );
+
+  const curMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  document.getElementById("calNextBtn").disabled = viewDate >= curMonthStart;
+  const minMonthStart = new Date(EARLIEST_DATE.getFullYear(), EARLIEST_DATE.getMonth(), 1);
+  document.getElementById("calPrevBtn").disabled = viewDate <= minMonthStart;
+}
+
+// ── Серії підряд відпрацьованих днів ─────────────────────────────
+function computeStreaks(){
+  const minKey = dateKeyOf(EARLIEST_DATE);
+  let current = 0;
+  let d = new Date(); d.setHours(0,0,0,0);
+  if(!isWorkDay(dateKeyOf(d))) d.setDate(d.getDate()-1);
+  while(dateKeyOf(d) >= minKey && isWorkDay(dateKeyOf(d))){
+    current++;
+    d.setDate(d.getDate()-1);
+  }
+
+  let best = 0, run = 0;
+  let cur = new Date(EARLIEST_DATE);
+  const end = new Date(); end.setHours(0,0,0,0);
+  while(cur <= end){
+    const dk = dateKeyOf(cur);
+    if(isWorkDay(dk)){ run++; if(run>best) best=run; }
+    else run = 0;
+    cur.setDate(cur.getDate()+1);
+  }
+  return { current, best };
+}
+
+function daysWord(n){
+  const mod10 = n%10, mod100 = n%100;
+  if(mod100>=11 && mod100<=14) return "днів";
+  if(mod10===1) return "день";
+  if(mod10>=2 && mod10<=4) return "дні";
+  return "днів";
+}
+
+function renderStreaks(){
+  const { current, best } = computeStreaks();
+  document.getElementById("streakCurrent").textContent = `${current} ${daysWord(current)}`;
+  document.getElementById("streakBest").textContent = `${best} ${daysWord(best)}`;
+}
+
+// ── Ціль на місяць ────────────────────────────────────────────────
+function renderGoalCard(){
+  const input = document.getElementById("monthGoalInput");
+  if(input && document.activeElement !== input) input.value = monthGoal || "";
+
+  const now = new Date();
+  const curMonth = monthKey(todayKey());
+  const monthSum = records.filter(r=>monthKey(r.date)===curMonth).reduce((s,r)=>s+r.qty*(r.rate??0),0);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysLeft = daysInMonth - now.getDate() + 1;
+
+  const el = document.getElementById("goalResult");
+  if(!monthGoal){
+    el.innerHTML = `<div class="empty">Встав ціль на місяць, щоб побачити прогноз.</div>`;
+    return;
+  }
+  const pct = Math.min(100, Math.round(monthSum/monthGoal*100));
+  const remaining = Math.max(0, monthGoal - monthSum);
+  const perDay = daysLeft>0 ? remaining/daysLeft : remaining;
+
+  el.innerHTML = `
+    <div class="goal-bar-bg"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
+    <div class="goal-stats">${fmt(monthSum)} / ${fmt(monthGoal)} ₴ (${pct}%)</div>
+    ${remaining>0
+      ? `<div class="goal-note">Залишилось <b>${fmt(Math.round(remaining))} ₴</b> за ${daysLeft} ${daysWord(daysLeft)} — це приблизно <b>${fmt(Math.round(perDay))} ₴/день</b>.</div>`
+      : `<div class="goal-note goal-done">🎉 Ціль на місяць вже досягнута!</div>`}
+  `;
 }
 
 function renderTimeStatSegment(){
@@ -1648,6 +1856,14 @@ document.getElementById("timeEntryAddBtn").onclick = () => {
   persist();
   minInp.value = "";
   renderTimeStats();
+};
+document.getElementById("calPrevBtn").onclick = () => { calendarMonthOffset--; renderCalendar(); };
+document.getElementById("calNextBtn").onclick = () => { calendarMonthOffset++; renderCalendar(); };
+document.getElementById("monthGoalInput").oninput = (e) => {
+  const v = parseInt(e.target.value, 10);
+  monthGoal = (Number.isFinite(v) && v > 0) ? v : 0;
+  persist();
+  renderGoalCard();
 };
 
 // ─── Старт застосунку (лише після успішного входу) ─────────────
