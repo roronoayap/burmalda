@@ -1318,7 +1318,8 @@ function renderForecast(){
   if(!el) return;
 
   const now = new Date();
-  const year = now.getFullYear(), month = now.getMonth();
+  const viewDate = new Date(now.getFullYear(), now.getMonth() + calendarMonthOffset, 1);
+  const year = viewDate.getFullYear(), month = viewDate.getMonth();
   const daysInMonth = new Date(year, month+1, 0).getDate();
 
   let workDays = 0, offDays = 0, vacationDays = 0;
@@ -1330,18 +1331,22 @@ function renderForecast(){
     else workDays++;
   }
 
-  const forecastQtyIP = workDays * kpiIP;
-  const forecastQtyAnalog = workDays * kpiAnalog;
-  const forecastSum = forecastQtyIP*rates.IP + forecastQtyAnalog*rates.Analog;
+  // День зазвичай або IP, або Analog — тому не сумуємо обидва плани на день,
+  // а беремо середнє між "днем IP" і "днем Analog", і множимо на робочі дні.
+  const dailyIP = kpiIP * rates.IP;
+  const dailyAnalog = kpiAnalog * rates.Analog;
+  const avgDailySum = (dailyIP + dailyAnalog) / 2;
+  const forecastSum = avgDailySum * workDays;
 
   el.innerHTML = `
+    <div class="cal-nav-label" style="margin-bottom:12px;">${MONTHS_NOM[month]} ${year}</div>
     <div class="time-stat-grid">
       <div class="time-stat-box"><div class="label">Робочих днів</div><div class="value">${workDays} з ${daysInMonth}</div></div>
       <div class="time-stat-box"><div class="label">Вихідних/відпустка</div><div class="value">${offDays+vacationDays}</div></div>
-      <div class="time-stat-box"><div class="label">Прогноз штук</div><div class="value">${forecastQtyIP} IP · ${forecastQtyAnalog} An</div></div>
+      <div class="time-stat-box"><div class="label">Середнє/день</div><div class="value">${fmt(Math.round(avgDailySum))} ₴</div></div>
       <div class="time-stat-box"><div class="label">Прогноз суми</div><div class="value">${fmt(Math.round(forecastSum))} ₴</div></div>
     </div>
-    <div class="goal-note">Якщо виконувати КПІ (${kpiIP} IP + ${kpiAnalog} Analog) щодня в робочі дні цього місяця — вийде приблизно <b>${fmt(Math.round(forecastSum))} ₴</b>.</div>
+    <div class="goal-note">День IP (${kpiIP}×${rates.IP}₴ = ${fmt(dailyIP)} ₴) і день Analog (${kpiAnalog}×${rates.Analog}₴ = ${fmt(dailyAnalog)} ₴) в середньому — <b>${fmt(Math.round(avgDailySum))} ₴/день</b>, помножено на ${workDays} робочих днів = <b>${fmt(Math.round(forecastSum))} ₴</b>.</div>
   `;
 }
 
@@ -2079,8 +2084,8 @@ document.getElementById("timeEntryAddBtn").onclick = () => {
   minInp.value = "";
   renderTimeStats();
 };
-document.getElementById("calPrevBtn").onclick = () => { calendarMonthOffset--; renderCalendar(); };
-document.getElementById("calNextBtn").onclick = () => { calendarMonthOffset++; renderCalendar(); };
+document.getElementById("calPrevBtn").onclick = () => { calendarMonthOffset--; renderCalendar(); renderForecast(); };
+document.getElementById("calNextBtn").onclick = () => { calendarMonthOffset++; renderCalendar(); renderForecast(); };
 document.getElementById("monthGoalInput").oninput = (e) => {
   const v = parseInt(e.target.value, 10);
   monthGoal = (Number.isFinite(v) && v > 0) ? v : 0;
