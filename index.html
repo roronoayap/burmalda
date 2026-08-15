@@ -663,6 +663,7 @@ const MONTHS_NOM = ["Січень","Лютий","Березень","Квітен
 let records = [];
 let rates = { ...DEFAULT_RATES };
 let sheetUrl = "";
+const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbyuDio3UkNwWMkqo8z5sJZhLcRzlHIyTUsuYXb6YEHeCmLcheJAH3g4mAuXXNzVWt-CCw/exec";
 let batchCounter = 1;
 let selType = "IP";
 let selModel = null;
@@ -763,12 +764,6 @@ document.getElementById("signOutBtn").onclick = () => {
   location.reload();
 };
 
-// Якщо вже є збережений валідний вхід — не чекаємо завантаження Google-скрипта
-(function(){
-  const stored = checkStoredAuth();
-  if(stored) onAuthSuccess(stored);
-})();
-
 let timeEntries = [];
 let timerRunning = false;
 let timerBaseElapsed = 0;   // мс, накопичені до поточного відрізка запуску
@@ -853,7 +848,7 @@ function load(){
       const data = JSON.parse(raw);
       records = data.records || [];
       rates = { ...DEFAULT_RATES, ...(data.rates||{}) };
-      sheetUrl = data.sheetUrl || "";
+      sheetUrl = data.sheetUrl || DEFAULT_SHEET_URL;
       batchCounter = data.batchCounter || initBatchCounter();
       timeEntries = data.timeEntries || [];
       timerRunning = data.timerRunning || false;
@@ -861,6 +856,7 @@ function load(){
       timerStartTs = data.timerStartTs || null;
     } else {
       batchCounter = 1;
+      sheetUrl = DEFAULT_SHEET_URL;
     }
   }catch(e){}
 }
@@ -1670,6 +1666,12 @@ function initApp(){
   timeEntryDateInit.max = todayKey();
   timeEntryDateInit.value = todayKey();
 }
+
+// Якщо вже є збережений валідний вхід — не чекаємо завантаження Google-скрипта
+(function(){
+  const stored = checkStoredAuth();
+  if(stored) onAuthSuccess(stored);
+})();
 </script>
 </body>
 </html>
