@@ -1514,15 +1514,28 @@ function startAutoSync(){
 // Відправляємо у зростаючому порядку ID, щоб в таблиці рядки йшли по порядку
 const SHEET_SECRET = "92XX79Ek0MxRWIy-znW9ckZc5gwh7cJs";
 
+// Сортує записи за датою (в межах дня — за старим ID, для стабільності),
+// потім перенумеровує ID підряд від batchid-00001. Міняє records на місці.
+function renumberByDate(){
+  const sorted = [...records].sort((a,b) => {
+    if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return (a.id||"") < (b.id||"") ? -1 : (a.id||"") > (b.id||"") ? 1 : 0;
+  });
+  sorted.forEach((r,i) => { r.id = `batchid-${pad5(i+1)}`; });
+  records = sorted;
+  batchCounter = sorted.length + 1;
+}
+
 function pushToSheet(){
   lastLocalWriteAt = Date.now();
+  renumberByDate();
+  persist();
   if(!sheetUrl) return;
-  const ordered = [...records].sort((a,b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   fetch(sheetUrl, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ type: "sync", secret: SHEET_SECRET, records: ordered })
+    body: JSON.stringify({ type: "sync", secret: SHEET_SECRET, records })
   }).catch(() => {});
 }
 
