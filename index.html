@@ -54,33 +54,18 @@
 
   /* Шапка */
   .header{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; margin-bottom:22px;}
-  .header-center{text-align:center;}
-  .header-center .title{
-    font-size:21px; letter-spacing:-.3px;
-    background:linear-gradient(150deg,#f4d189,var(--gold) 65%); -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
+  .header-center{text-align:center; display:flex; justify-content:center;}
+  .header-logo{width:38px; height:38px; border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.35);}
   .header-add-btn{font-size:20px; font-weight:400;}
-  .eyebrow{color:var(--mute); font-size:13px; letter-spacing:.4px; margin-bottom:4px;}
-  .title{font-size:22px; font-weight:700; letter-spacing:-.3px; font-family:'Space Grotesk',sans-serif;}
   .icon-btn{width:40px; height:40px; border-radius:13px; background:#1a1a1f; border:1px solid var(--line); color:var(--gold); font-size:16px; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04); display:flex; align-items:center; justify-content:center;}
+  .header-actions{display:flex; align-items:center; gap:10px; justify-self:end;}
 
-  /* Акаунт */
-  .header-actions{display:flex; align-items:center; gap:10px;}
-  .account-wrap{position:relative;}
-  .account-avatar-btn{
-    width:40px; height:40px; border-radius:50%; overflow:hidden; padding:0;
-    border:1px solid var(--line); background:#1a1a1f; box-shadow:0 3px 10px rgba(0,0,0,.28);
-  }
-  .account-avatar-btn img{width:100%; height:100%; object-fit:cover; display:block; background:#1a1a1f;}
-  .account-menu{
-    position:absolute; top:48px; right:0; z-index:30; display:none;
-    background:linear-gradient(165deg,#1a191f,#151419); border:1px solid #262530; border-radius:16px;
-    padding:12px 14px; min-width:210px; box-shadow:0 14px 34px rgba(0,0,0,.4);
-    animation:overlayIn .18s ease both;
-  }
-  .account-menu.open{display:block;}
-  .account-menu-email{font-size:12.5px; color:var(--mute); margin-bottom:10px; word-break:break-all; line-height:1.4;}
-  .account-menu-signout{width:100%; padding:9px 0; background:#1c1c21; border:1px solid var(--line); border-radius:10px; color:#e08a7d; font-size:13.5px; font-weight:600;}
+  /* Акаунт (у налаштуваннях) */
+  .settings-account-row{display:flex; align-items:center; gap:12px; padding:8px 0 16px;}
+  .settings-avatar{width:48px; height:48px; border-radius:50%; object-fit:cover; background:#1a1a1f; border:1px solid var(--line); flex-shrink:0;}
+  .settings-account-info{flex:1; min-width:0;}
+  .settings-account-email{font-size:13px; color:var(--ink); font-weight:600; margin-bottom:8px; word-break:break-all; line-height:1.4;}
+  .settings-signout-btn{padding:7px 14px; background:#1c1c21; border:1px solid var(--line); border-radius:10px; color:#e08a7d; font-size:12.5px; font-weight:600;}
 
   /* Вхід через Google */
   .auth-gate{
@@ -97,8 +82,12 @@
   #settingsIcon{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
 
   /* Налаштування */
-  .settings{border:1px solid var(--line); border-radius:16px; padding:6px 16px; margin-bottom:18px; background:#16161a; display:none;}
-  .settings.open{display:block;}
+  .settings{border:1px solid var(--line); border-radius:16px; padding:6px 16px; margin-bottom:18px; background:#16161a; display:none; transform-origin:top center;}
+  .settings.open{display:block; animation:settingsPop .32s cubic-bezier(.34,1.4,.64,1) both;}
+  @keyframes settingsPop{
+    from{opacity:0; transform:scale(.94) translateY(-6px);}
+    to{opacity:1; transform:scale(1) translateY(0);}
+  }
   .settings-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:12px;}
   .settings-row .left{display:flex; align-items:center; gap:8px;}
   .rate-input{width:90px; text-align:right; background:#1d1d22; border:1px solid var(--line); border-radius:10px; padding:8px 10px; color:var(--ink); font-size:16px; font-weight:600; outline:none; font-family:inherit; box-shadow:inset 0 1px 3px rgba(0,0,0,.3);}
@@ -447,6 +436,17 @@
   }
   @keyframes sheetUp{from{transform:translateY(100%);} to{transform:translateY(0);}}
   @media (prefers-reduced-motion: reduce){.modal-overlay.open{animation:none;} .modal-sheet{animation:none;}}
+  .modal-overlay.modal-center{align-items:center; padding:20px;}
+  .modal-overlay.modal-center .modal-sheet{
+    border-radius:26px; max-height:82vh; padding-bottom:24px;
+    animation:modalPopIn .34s cubic-bezier(.34,1.5,.64,1) both;
+    box-shadow:0 20px 60px rgba(0,0,0,.55);
+  }
+  @keyframes modalPopIn{
+    from{opacity:0; transform:scale(.9) translateY(10px);}
+    to{opacity:1; transform:scale(1) translateY(0);}
+  }
+  @media (prefers-reduced-motion: reduce){.modal-overlay.modal-center .modal-sheet{animation:none;}}
   .modal-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:12px;}
   .modal-title{font-size:17px; font-weight:700; font-family:'Space Grotesk',sans-serif;}
   .modal-sub{display:block; font-size:13px; font-weight:500; color:var(--mute); margin-top:3px; font-family:'Inter',sans-serif;}
@@ -529,19 +529,9 @@
   <div class="header">
     <button class="icon-btn header-add-btn" id="addRecordBtn" aria-label="Новий запис">+</button>
     <div class="header-center">
-      <div class="eyebrow" id="eyebrow"></div>
-      <div class="title">BABKI</div>
+      <img class="header-logo" src="data:image/png;base64,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" alt="BABKI">
     </div>
     <div class="header-actions">
-      <div class="account-wrap">
-        <button class="account-avatar-btn" id="accountAvatarBtn" aria-label="Акаунт">
-          <img id="accountAvatarImg" src="" alt="">
-        </button>
-        <div class="account-menu" id="accountMenu">
-          <div class="account-menu-email" id="accountEmailLabel"></div>
-          <button class="account-menu-signout" id="signOutBtn">Вийти</button>
-        </div>
-      </div>
       <button class="icon-btn" id="settingsBtn" aria-label="Налаштування">
         <svg id="settingsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
           <circle cx="12" cy="12" r="3"></circle>
@@ -580,7 +570,7 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="addRecordOverlay">
+  <div class="modal-overlay modal-center" id="addRecordOverlay">
     <div class="modal-sheet">
       <div class="modal-head">
         <div class="modal-title">Новий запис</div>
@@ -755,6 +745,11 @@
       <div class="section-label">Архів дронів</div>
       <input class="history-search" id="historySearch" type="search" inputmode="search" placeholder="Пошук за моделлю, типом, датою…">
       <div class="chip-row" id="archiveTypeChips"></div>
+      <div class="ios-select-row" id="archiveModelSelectRow" style="display:none">
+        <div class="ios-select">
+          <select id="archiveModelSelect"></select>
+        </div>
+      </div>
       <div class="ios-select-row">
         <div class="ios-select">
           <select id="archivePeriodSelect">
@@ -859,6 +854,8 @@ let historyQuery = "";
 
 // ─── Вхід через Google ───────────────────────────────────────────
 const GOOGLE_CLIENT_ID = "532884173757-an4h8it249v4ba3ofb79qss66ijcl8ck.apps.googleusercontent.com";
+let currentAuthEmail = "";
+let currentAuthPicture = "";
 const ALLOWED_EMAILS = ["prostolilnik@gmail.com"];
 const AUTH_KEY = "zp-tracker-auth-v1";
 
@@ -910,13 +907,13 @@ function handleCredentialResponse(response){
 
 function onAuthSuccess(authData){
   document.getElementById("authGate").classList.remove("open");
-  const img = document.getElementById("accountAvatarImg");
-  if(img && authData.picture) img.src = authData.picture;
-  const emailLabel = document.getElementById("accountEmailLabel");
-  if(emailLabel) emailLabel.textContent = authData.email;
+  currentAuthEmail = authData.email || "";
+  currentAuthPicture = authData.picture || "";
   if(!window.__appStarted){
     window.__appStarted = true;
     initApp();
+  } else {
+    renderSettings();
   }
 }
 
@@ -933,22 +930,6 @@ function initGoogleAuth(){
   const stored = checkStoredAuth();
   if(stored) onAuthSuccess(stored);
 }
-
-document.getElementById("accountAvatarBtn").onclick = () => {
-  document.getElementById("accountMenu").classList.toggle("open");
-};
-document.addEventListener("click", (e) => {
-  const wrap = document.querySelector(".account-wrap");
-  const menu = document.getElementById("accountMenu");
-  if(menu && menu.classList.contains("open") && wrap && !wrap.contains(e.target)){
-    menu.classList.remove("open");
-  }
-});
-document.getElementById("signOutBtn").onclick = () => {
-  try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
-  if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
-  location.reload();
-};
 
 let timeEntries = [];
 let timerRunning = false;
@@ -1069,8 +1050,6 @@ function persist(){
 
 // ─── Рендер ───────────────────────────────────────────────────
 function renderAll(){
-  const now = new Date();
-  document.getElementById("eyebrow").textContent = `${MONTHS_NOM[now.getMonth()]} ${now.getFullYear()}`;
   renderStats(); renderChart(); renderSegment(); renderModels(); renderQty(); renderRecentHistory(); renderSettings();
   renderArchiveScreen();
   renderStatsScreen();
@@ -1828,6 +1807,7 @@ function renderBatchList(filtered, targetElId, groupsStore, emptyMsg){
 
 // ─── Архів (з пошуком і фільтрами) ──────────────────────────────
 let archiveTypeFilter = "all";  // all | IP | Analog | Radio
+let archiveModelFilter = "all"; // all | конкретна модель
 let archivePeriod = "all";      // all | month | week | custom
 let archiveCustomFrom = null;
 let archiveCustomTo = null;
@@ -1842,6 +1822,7 @@ function archiveCustomRange(){
 function renderHistory(){
   let filtered = records;
   if(archiveTypeFilter !== "all") filtered = filtered.filter(r => r.type===archiveTypeFilter);
+  if(archiveTypeFilter !== "all" && archiveModelFilter !== "all") filtered = filtered.filter(r => (r.model||r.type)===archiveModelFilter);
   let range;
   if(archivePeriod==="month") range = periodRange("month");
   else if(archivePeriod==="week") range = periodRange("week");
@@ -1868,8 +1849,26 @@ function renderArchiveTypeChips(){
     return `<button data-type="${k}" class="chip ${cls}">${label}</button>`;
   }).join("");
   el.querySelectorAll(".chip").forEach(b =>
-    b.onclick = () => { archiveTypeFilter = b.dataset.type; renderArchiveTypeChips(); renderHistory(); }
+    b.onclick = () => {
+      archiveTypeFilter = b.dataset.type;
+      archiveModelFilter = "all";
+      renderArchiveTypeChips();
+      renderArchiveModelSelect();
+      renderHistory();
+    }
   );
+}
+
+function renderArchiveModelSelect(){
+  const row = document.getElementById("archiveModelSelectRow");
+  if(archiveTypeFilter==="all"){ row.style.display = "none"; return; }
+  row.style.display = "";
+  const sel = document.getElementById("archiveModelSelect");
+  const models = MODELS[archiveTypeFilter] || [];
+  sel.innerHTML = `<option value="all">Усі моделі ${archiveTypeFilter}</option>` +
+    models.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  sel.value = archiveModelFilter;
+  sel.onchange = () => { archiveModelFilter = sel.value; renderHistory(); };
 }
 
 function renderArchivePeriodSelect(){
@@ -1903,6 +1902,7 @@ function setupArchiveCustomRangeInputs(){
 
 function renderArchiveScreen(){
   renderArchiveTypeChips();
+  renderArchiveModelSelect();
   renderArchivePeriodSelect();
   setupArchiveCustomRangeInputs();
   renderHistory();
@@ -1962,7 +1962,16 @@ function closeAddRecordModal(){
 
 
 function renderSettings(){
-  document.getElementById("settings").innerHTML = TYPES.map(t=>`
+  document.getElementById("settings").innerHTML = `
+    <div class="settings-account-row">
+      <img class="settings-avatar" id="accountAvatarImg" src="${esc(currentAuthPicture)}" alt="">
+      <div class="settings-account-info">
+        <div class="settings-account-email" id="accountEmailLabel">${esc(currentAuthEmail)}</div>
+        <button class="settings-signout-btn" id="signOutBtn">Вийти з акаунта</button>
+      </div>
+    </div>
+    <div class="settings-divider"></div>` +
+    TYPES.map(t=>`
     <div class="settings-row">
       <span class="left"><span class="dot" style="background:${HUE[t]}"></span><span class="muted">${t}, за дрон</span></span>
       <input class="rate-input" type="number" inputmode="numeric" data-type="${t}" value="${rates[t]}">
@@ -1996,6 +2005,11 @@ function renderSettings(){
       <span class="backup-note">Файл з усіма твоїми записами — зберігай собі, це твоя власна копія, незалежна від таблиці й застосунку.</span>
       <input type="file" id="importFile" accept="application/json" style="display:none">
     </div>`;
+  document.getElementById("signOutBtn").onclick = () => {
+    try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
+    if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+    location.reload();
+  };
   document.querySelectorAll("#settings .rate-input").forEach(inp =>
     inp.oninput = () => {
       rates[inp.dataset.type] = Math.max(0, Number(inp.value)||0);
