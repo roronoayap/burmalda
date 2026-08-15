@@ -23,17 +23,28 @@
     --ra:#c9a0ff; --ra-soft:rgba(201,160,255,.14);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0;}
+  html,body{margin:0; padding:0; height:100%;}
   body{
-    min-height:100vh;
+    overflow:hidden; position:fixed; inset:0; width:100%;
     background:radial-gradient(90% 50% at 50% 0%, #17161c 0%, var(--bg) 60%);
     color:var(--ink);
     font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
     font-feature-settings:'tnum' 1;
     padding-top:env(safe-area-inset-top);
-    padding-bottom:env(safe-area-inset-bottom);
   }
-  .container{max-width:490px; margin:0 auto; padding:26px 18px;}
+  .bg-ambient{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none;}
+  .bg-ambient span{position:absolute; border-radius:50%; filter:blur(64px);}
+  .bg-ambient span:nth-child(1){width:280px; height:280px; background:var(--gold); opacity:.12; top:-70px; left:-70px; animation:float1 24s ease-in-out infinite;}
+  .bg-ambient span:nth-child(2){width:320px; height:320px; background:var(--ip); opacity:.08; bottom:12%; right:-90px; animation:float2 28s ease-in-out infinite;}
+  .bg-ambient span:nth-child(3){width:240px; height:240px; background:var(--ra); opacity:.07; top:42%; left:60%; animation:float3 32s ease-in-out infinite;}
+  @keyframes float1{0%,100%{transform:translate(0,0);} 50%{transform:translate(26px,34px);}}
+  @keyframes float2{0%,100%{transform:translate(0,0);} 50%{transform:translate(-22px,-30px);}}
+  @keyframes float3{0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,28px);}}
+  @media (prefers-reduced-motion: reduce){.bg-ambient span{animation:none;}}
+  .container{
+    max-width:490px; margin:0 auto; padding:26px 18px;
+    height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;
+  }
   button{font-family:inherit; cursor:pointer; transition:opacity .12s, transform .06s, background .15s, color .15s, border-color .15s;}
   button:active{transform:scale(.97);}
   button:focus-visible, input:focus-visible{outline:2px solid #6f6a5c; outline-offset:2px;}
@@ -350,6 +361,7 @@
 </style>
 </head>
 <body>
+<div class="bg-ambient"><span></span><span></span><span></span></div>
 <div class="container">
 
   <div class="header">
