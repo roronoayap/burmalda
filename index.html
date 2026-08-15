@@ -137,9 +137,15 @@
   .bar-label{font-size:9.5px; font-weight:600; color:#55555c;}
 
   .type-split{display:flex; gap:16px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid #232228; flex-wrap:wrap; font-size:14px;}
-  .today-status-row{display:flex; align-items:center; justify-content:center; margin-top:14px; padding-top:14px; border-top:1px solid #1f1e24;}
-  .day-status-badge{padding:5px 12px; border-radius:999px; font-weight:700; font-size:11.5px; background:#1c1c21; color:var(--mute); border:1px solid var(--line);}
-  .day-status-badge.status-work{background:rgba(120,200,150,.16); color:#8fd19e; border-color:rgba(120,200,150,.35);}
+  .today-status-row{display:flex; align-items:center; justify-content:flex-start; margin-top:14px; padding-top:14px; border-top:1px solid #1f1e24;}
+  .day-status-badge{display:inline-flex; align-items:center; gap:7px; padding:5px 12px 5px 9px; border-radius:999px; font-weight:700; font-size:11.5px; background:#1c1c21; color:var(--mute); border:1px solid var(--line);}
+  .day-status-dot{width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0;}
+  .day-status-badge.status-work{background:rgba(120,200,150,.14); color:#8fd19e; border-color:rgba(120,200,150,.32);}
+  .day-status-badge.status-work .day-status-dot{animation:statusPulse 2.2s ease-in-out infinite;}
+  @keyframes statusPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(143,209,158,.55);}
+    50%{box-shadow:0 0 0 5px rgba(143,209,158,0);}
+  }
   .day-status-badge.status-off{background:rgba(224,138,125,.14); color:#e08a7d; border-color:rgba(224,138,125,.32);}
   .day-status-badge.status-vacation{background:rgba(150,160,235,.16); color:#a9b2f2; border-color:rgba(150,160,235,.35);}
   .kpi-rings-row{display:flex; gap:22px; margin-top:16px; padding-top:16px; border-top:1px solid #1f1e24;}
@@ -1476,14 +1482,26 @@ function renderTodayStatus(){
   if(mark === "off"){ label = "Вихідний"; cls = "status-off"; }
   else if(mark === "vacation"){ label = "Відпустка"; cls = "status-vacation"; }
   else if(mark === "work" || records.some(r=>r.date===dk)){ label = "Робочий день"; cls = "status-work"; }
-  badge.textContent = label;
+  badge.innerHTML = `<span class="day-status-dot"></span>${label}`;
   badge.className = "day-status-badge" + (cls ? " "+cls : "");
 
   const todayIP = records.filter(r=>r.date===dk && r.type==="IP").reduce((s,r)=>s+r.qty,0);
   const todayAnalog = records.filter(r=>r.date===dk && r.type==="Analog").reduce((s,r)=>s+r.qty,0);
-  ringsEl.innerHTML =
-    kpiRingHTML("IP", todayIP, kpiIP, "var(--ip)") +
-    kpiRingHTML("Analog", todayAnalog, kpiAnalog, "var(--an)");
+
+  // У нас зазвичай день або IP, або Analog — показуємо тільки те, чим реально займались.
+  // Обидва по нулях (день ще не почався) — показуємо обидва, як план на день.
+  // Якщо здав і того, і того — теж показуємо обидва.
+  let ringsHTML;
+  if(todayIP > 0 && todayAnalog > 0){
+    ringsHTML = kpiRingHTML("IP", todayIP, kpiIP, "var(--ip)") + kpiRingHTML("Analog", todayAnalog, kpiAnalog, "var(--an)");
+  } else if(todayIP > 0){
+    ringsHTML = kpiRingHTML("IP", todayIP, kpiIP, "var(--ip)");
+  } else if(todayAnalog > 0){
+    ringsHTML = kpiRingHTML("Analog", todayAnalog, kpiAnalog, "var(--an)");
+  } else {
+    ringsHTML = kpiRingHTML("IP", 0, kpiIP, "var(--ip)") + kpiRingHTML("Analog", 0, kpiAnalog, "var(--an)");
+  }
+  ringsEl.innerHTML = ringsHTML;
 }
 
 function renderTimeStatSegment(){
