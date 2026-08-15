@@ -137,14 +137,25 @@
   .bar-label{font-size:9.5px; font-weight:600; color:#55555c;}
 
   .type-split{display:flex; gap:16px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid #232228; flex-wrap:wrap; font-size:14px;}
-  .today-status-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid #1f1e24;}
+  .today-status-row{display:flex; align-items:center; justify-content:center; margin-top:14px; padding-top:14px; border-top:1px solid #1f1e24;}
   .day-status-badge{padding:5px 12px; border-radius:999px; font-weight:700; font-size:11.5px; background:#1c1c21; color:var(--mute); border:1px solid var(--line);}
   .day-status-badge.status-work{background:rgba(120,200,150,.16); color:#8fd19e; border-color:rgba(120,200,150,.35);}
   .day-status-badge.status-off{background:rgba(224,138,125,.14); color:#e08a7d; border-color:rgba(224,138,125,.32);}
   .day-status-badge.status-vacation{background:rgba(150,160,235,.16); color:#a9b2f2; border-color:rgba(150,160,235,.35);}
-  .kpi-progress{display:flex; gap:14px; font-size:12.5px; color:var(--mute); font-weight:600;}
-  .kpi-progress b{color:var(--ink);}
-  .kpi-progress .kpi-met b{color:#8fd19e;}
+  .kpi-rings-row{display:flex; gap:22px; margin-top:16px; padding-top:16px; border-top:1px solid #1f1e24;}
+  .kpi-ring-item{display:flex; align-items:center; gap:11px; flex:1;}
+  .kpi-ring-wrap{position:relative; width:46px; height:46px; flex-shrink:0;}
+  .kpi-ring-svg{width:46px; height:46px; transform:rotate(-90deg);}
+  .kpi-ring-bg{fill:none; stroke:#232228; stroke-width:4;}
+  .kpi-ring-fill{fill:none; stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1), stroke .3s;}
+  .kpi-ring-check{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:15px; opacity:0; transition:opacity .3s;}
+  .kpi-ring-item.kpi-met .kpi-ring-check{opacity:1;}
+  .kpi-ring-item.kpi-met .kpi-ring-frac{opacity:0;}
+  .kpi-ring-frac{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; color:var(--ink); font-family:'Space Grotesk',sans-serif; transition:opacity .3s;}
+  .kpi-ring-info{display:flex; flex-direction:column;}
+  .kpi-ring-type{font-size:10.5px; color:var(--mute); font-weight:700; text-transform:uppercase; letter-spacing:.5px;}
+  .kpi-ring-target{font-size:13px; font-weight:600; color:#cfccc4; margin-top:1px;}
+  .kpi-ring-item.kpi-met .kpi-ring-target{color:#8fd19e;}
   .type-split .item{display:flex; align-items:center; gap:6px;}
   .type-split .item b{font-weight:700;}
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
@@ -436,7 +447,7 @@
     pointer-events:none;
   }
   .tabbar-inner{
-    position:relative; display:flex; width:100%; max-width:340px;
+    position:relative; display:flex; width:100%; max-width:420px;
     background:linear-gradient(180deg, rgba(40,39,46,.58), rgba(24,23,28,.66));
     -webkit-backdrop-filter:blur(30px) saturate(200%); backdrop-filter:blur(30px) saturate(200%);
     border:1px solid rgba(255,255,255,.1);
@@ -452,7 +463,7 @@
   }
   .tab-indicator{
     position:absolute; top:5px; bottom:5px; left:5px;
-    width:calc(33.333% - 3.4px); border-radius:22px;
+    width:calc(25% - 2.5px); border-radius:22px;
     background:linear-gradient(155deg, rgba(233,185,92,.26), rgba(233,185,92,.1));
     border:1px solid rgba(233,185,92,.34);
     box-shadow:0 4px 16px rgba(233,185,92,.16), inset 0 1px 0 rgba(255,255,255,.16);
@@ -462,7 +473,7 @@
   .tab-btn{
     position:relative; z-index:1;
     flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-    background:transparent; border:none; padding:10px 0 9px; color:var(--mute); font-size:11px; font-weight:600;
+    background:transparent; border:none; padding:10px 0 9px; color:var(--mute); font-size:10.5px; font-weight:600;
     transition:color .3s ease;
   }
   .tab-icon-wrap{position:relative; width:23px; height:23px;}
@@ -532,8 +543,8 @@
       <div class="type-split" id="typeSplit"></div>
       <div class="today-status-row">
         <span class="day-status-badge" id="dayStatusBadge">Не позначено</span>
-        <span class="kpi-progress" id="kpiProgress"></span>
       </div>
+      <div class="kpi-rings-row" id="kpiRingsRow"></div>
     </div>
 
     <div class="card">
@@ -659,6 +670,10 @@
       <div id="timeSessionsList"></div>
     </div>
 
+  </div>
+
+  <div class="view" id="viewRhythm">
+
     <div class="card">
       <div class="section-label">Календар</div>
       <div class="cal-nav">
@@ -732,6 +747,13 @@
         <svg class="ti-filled" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3a10 10 0 1 0 .01 0Zm.9 5.4a.9.9 0 1 0-1.8 0v4.9c0 .27.12.53.33.7l3.1 2.6a.9.9 0 1 0 1.15-1.38l-2.78-2.34Z"/><rect x="9.5" y="1" width="5" height="2" rx="1"/></svg>
       </span>
       <span>Час</span>
+    </button>
+    <button class="tab-btn" data-view="rhythm">
+      <span class="tab-icon-wrap">
+        <svg class="ti-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/></svg>
+        <svg class="ti-filled" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><circle cx="8" cy="3.6" r="1.2"/><circle cx="16" cy="3.6" r="1.2"/></svg>
+      </span>
+      <span>Ритм</span>
     </button>
   </div>
 </nav>
@@ -976,6 +998,7 @@ function renderAll(){
   renderStats(); renderChart(); renderSegment(); renderModels(); renderQty(); renderHistory(); renderSettings();
   renderStatsScreen();
   renderTimeScreen();
+  renderRhythmScreen();
 }
 
 function renderStatsScreen(){
@@ -1257,6 +1280,9 @@ function renderTimeScreen(){
   if(timerRunning) startTimerTick();
   renderTimeStatSegment();
   renderTimeStats();
+}
+
+function renderRhythmScreen(){
   renderCalendar();
   renderStreaks();
   renderGoalCard();
@@ -1414,10 +1440,35 @@ function renderGoalCard(){
 }
 
 // ── Статус сьогодні + прогрес КПІ (на Головній) ──────────────────
+const KPI_RING_R = 18;
+const KPI_RING_C = 2 * Math.PI * KPI_RING_R; // довжина кола
+
+function kpiRingHTML(type, done, target, colorVar){
+  const pct = target>0 ? Math.min(1, done/target) : 0;
+  const offset = KPI_RING_C * (1 - pct);
+  const met = target>0 && done>=target;
+  return `
+    <div class="kpi-ring-item${met?" kpi-met":""}">
+      <div class="kpi-ring-wrap">
+        <svg class="kpi-ring-svg" viewBox="0 0 46 46">
+          <circle class="kpi-ring-bg" cx="23" cy="23" r="${KPI_RING_R}"/>
+          <circle class="kpi-ring-fill" cx="23" cy="23" r="${KPI_RING_R}"
+            style="stroke:${met? '#8fd19e' : colorVar}; stroke-dasharray:${KPI_RING_C}; stroke-dashoffset:${offset};"/>
+        </svg>
+        <span class="kpi-ring-frac">${done}/${target}</span>
+        <span class="kpi-ring-check">✓</span>
+      </div>
+      <div class="kpi-ring-info">
+        <span class="kpi-ring-type">${type}</span>
+        <span class="kpi-ring-target">${met ? "план виконано" : `${Math.max(0,target-done)} до плану`}</span>
+      </div>
+    </div>`;
+}
+
 function renderTodayStatus(){
   const badge = document.getElementById("dayStatusBadge");
-  const kpiEl = document.getElementById("kpiProgress");
-  if(!badge || !kpiEl) return;
+  const ringsEl = document.getElementById("kpiRingsRow");
+  if(!badge || !ringsEl) return;
 
   const dk = todayKey();
   const mark = workDayMarks[dk];
@@ -1430,10 +1481,9 @@ function renderTodayStatus(){
 
   const todayIP = records.filter(r=>r.date===dk && r.type==="IP").reduce((s,r)=>s+r.qty,0);
   const todayAnalog = records.filter(r=>r.date===dk && r.type==="Analog").reduce((s,r)=>s+r.qty,0);
-  kpiEl.innerHTML = `
-    <span class="${todayIP>=kpiIP && kpiIP>0 ? 'kpi-met' : ''}">IP <b>${todayIP}/${kpiIP}</b></span>
-    <span class="${todayAnalog>=kpiAnalog && kpiAnalog>0 ? 'kpi-met' : ''}">Analog <b>${todayAnalog}/${kpiAnalog}</b></span>
-  `;
+  ringsEl.innerHTML =
+    kpiRingHTML("IP", todayIP, kpiIP, "var(--ip)") +
+    kpiRingHTML("Analog", todayAnalog, kpiAnalog, "var(--an)");
 }
 
 function renderTimeStatSegment(){
@@ -1872,8 +1922,10 @@ function showView(view){
   document.getElementById("viewHome").classList.toggle("active", view==="home");
   document.getElementById("viewStats").classList.toggle("active", view==="stats");
   document.getElementById("viewTime").classList.toggle("active", view==="time");
+  document.getElementById("viewRhythm").classList.toggle("active", view==="rhythm");
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.view===view));
-  const idx = view==="home" ? 0 : view==="stats" ? 1 : 2;
+  const order = ["home","stats","time","rhythm"];
+  const idx = order.indexOf(view);
   document.getElementById("tabIndicator").style.transform = `translateX(${idx*100}%)`;
   window.scrollTo(0,0);
 }
