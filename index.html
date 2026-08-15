@@ -137,19 +137,19 @@
   .bar-label{font-size:9.5px; font-weight:600; color:#55555c;}
 
   .type-split{display:flex; gap:16px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid #232228; flex-wrap:wrap; font-size:14px;}
-  .today-status-row{display:flex; align-items:center; justify-content:flex-start; margin-top:14px; padding-top:14px; border-top:1px solid #1f1e24;}
-  .day-status-badge{display:inline-flex; align-items:center; gap:7px; padding:5px 12px 5px 9px; border-radius:999px; font-weight:700; font-size:11.5px; background:#1c1c21; color:var(--mute); border:1px solid var(--line);}
-  .day-status-dot{width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0;}
-  .day-status-badge.status-work{background:rgba(120,200,150,.14); color:#8fd19e; border-color:rgba(120,200,150,.32);}
+  .today-status-row{display:flex; align-items:center; justify-content:flex-start; margin-top:16px; padding-top:16px; padding-bottom:2px; border-top:1px solid #1f1e24;}
+  .day-status-badge{display:inline-flex; align-items:center; gap:10px; font-weight:800; font-size:19px; font-family:'Space Grotesk',sans-serif; letter-spacing:-.2px; color:var(--mute);}
+  .day-status-dot{width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0;}
+  .day-status-badge.status-work{color:#8fd19e;}
   .day-status-badge.status-work .day-status-dot{animation:statusPulse 2.2s ease-in-out infinite;}
   @keyframes statusPulse{
     0%,100%{box-shadow:0 0 0 0 rgba(143,209,158,.55);}
     50%{box-shadow:0 0 0 5px rgba(143,209,158,0);}
   }
-  .day-status-badge.status-off{background:rgba(224,138,125,.14); color:#e08a7d; border-color:rgba(224,138,125,.32);}
-  .day-status-badge.status-vacation{background:rgba(150,160,235,.16); color:#a9b2f2; border-color:rgba(150,160,235,.35);}
-  .kpi-rings-row{display:flex; gap:22px; margin-top:16px; padding-top:16px; border-top:1px solid #1f1e24;}
-  .kpi-ring-item{display:flex; align-items:center; gap:11px; flex:1;}
+  .day-status-badge.status-off{color:#e08a7d;}
+  .day-status-badge.status-vacation{color:#a9b2f2;}
+  .kpi-rings-row{display:flex; gap:32px; justify-content:center; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid #1f1e24;}
+  .kpi-ring-item{display:flex; align-items:center; gap:11px; flex:0 1 auto;}
   .kpi-ring-wrap{position:relative; width:46px; height:46px; flex-shrink:0;}
   .kpi-ring-svg{width:46px; height:46px; transform:rotate(-90deg);}
   .kpi-ring-bg{fill:none; stroke:#232228; stroke-width:4;}
