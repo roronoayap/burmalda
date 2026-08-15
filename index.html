@@ -137,6 +137,14 @@
   .bar-label{font-size:9.5px; font-weight:600; color:#55555c;}
 
   .type-split{display:flex; gap:16px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid #232228; flex-wrap:wrap; font-size:14px;}
+  .today-status-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid #1f1e24;}
+  .day-status-badge{padding:5px 12px; border-radius:999px; font-weight:700; font-size:11.5px; background:#1c1c21; color:var(--mute); border:1px solid var(--line);}
+  .day-status-badge.status-work{background:rgba(120,200,150,.16); color:#8fd19e; border-color:rgba(120,200,150,.35);}
+  .day-status-badge.status-off{background:rgba(224,138,125,.14); color:#e08a7d; border-color:rgba(224,138,125,.32);}
+  .day-status-badge.status-vacation{background:rgba(150,160,235,.16); color:#a9b2f2; border-color:rgba(150,160,235,.35);}
+  .kpi-progress{display:flex; gap:14px; font-size:12.5px; color:var(--mute); font-weight:600;}
+  .kpi-progress b{color:var(--ink);}
+  .kpi-progress .kpi-met b{color:#8fd19e;}
   .type-split .item{display:flex; align-items:center; gap:6px;}
   .type-split .item b{font-weight:700;}
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
@@ -316,6 +324,8 @@
   .cal-legend-item .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
   .cal-dot-work{background:#8fd19e;}
   .cal-dot-off{background:#e08a7d;}
+  .cal-cell.cal-vacation{background:rgba(150,160,235,.16); border-color:rgba(150,160,235,.4); color:#a9b2f2;}
+  .cal-dot-vacation{background:#a9b2f2;}
 
   /* Серії */
   .streak-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
@@ -520,6 +530,10 @@
       </div>
       <div class="chart" id="chart"></div>
       <div class="type-split" id="typeSplit"></div>
+      <div class="today-status-row">
+        <span class="day-status-badge" id="dayStatusBadge">Не позначено</span>
+        <span class="kpi-progress" id="kpiProgress"></span>
+      </div>
     </div>
 
     <div class="card">
@@ -659,7 +673,8 @@
       <div class="cal-legend">
         <span class="cal-legend-item"><span class="dot cal-dot-work"></span> робочий</span>
         <span class="cal-legend-item"><span class="dot cal-dot-off"></span> вихідний</span>
-        <span class="cal-legend-item">тап по дню — позначити</span>
+        <span class="cal-legend-item"><span class="dot cal-dot-vacation"></span> відпустка</span>
+        <span class="cal-legend-item">тап по дню — перемкнути</span>
       </div>
     </div>
 
@@ -845,9 +860,11 @@ let timerBaseElapsed = 0;   // мс, накопичені до поточног�
 let timerStartTs = null;    // час старту поточного відрізка (epoch ms)
 let timerTickHandle = null;
 let timeStatPeriod = "today"; // today | month | all
-let workDayMarks = {};      // {"YYYY-MM-DD": "work"|"off"}
+let workDayMarks = {};      // {"YYYY-MM-DD": "work"|"off"|"vacation"}
 let calendarMonthOffset = 0;
 let monthGoal = 0;
+let kpiIP = 8;
+let kpiAnalog = 10;
 
 // ─── Утиліти ──────────────────────────────────────────────────
 const fmt = n => n.toLocaleString("uk-UA").replace(/,/g," ");
@@ -934,6 +951,8 @@ function load(){
       timerStartTs = data.timerStartTs || null;
       workDayMarks = data.workDayMarks || {};
       monthGoal = data.monthGoal || 0;
+      kpiIP = (typeof data.kpiIP === "number") ? data.kpiIP : 8;
+      kpiAnalog = (typeof data.kpiAnalog === "number") ? data.kpiAnalog : 10;
     } else {
       batchCounter = 1;
       sheetUrl = DEFAULT_SHEET_URL;
@@ -945,7 +964,7 @@ function persist(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       records, rates, sheetUrl, batchCounter,
       timeEntries, timerRunning, timerBaseElapsed, timerStartTs,
-      workDayMarks, monthGoal
+      workDayMarks, monthGoal, kpiIP, kpiAnalog
     }));
   }catch(e){}
 }
@@ -1243,10 +1262,10 @@ function renderTimeScreen(){
   renderGoalCard();
 }
 
-// ── Календар робочих/вихідних днів ───────────────────────────────
+// ── Календар робочих/вихідних днів/відпустки ─────────────────────
 function isWorkDay(dateKey){
   const mark = workDayMarks[dateKey];
-  if(mark === "off") return false;
+  if(mark === "off" || mark === "vacation") return false;
   if(mark === "work") return true;
   return records.some(r => r.date === dateKey);
 }
@@ -1255,10 +1274,13 @@ function toggleDayMark(dateKey){
   const cur = workDayMarks[dateKey];
   if(!cur) workDayMarks[dateKey] = "work";
   else if(cur === "work") workDayMarks[dateKey] = "off";
+  else if(cur === "off") workDayMarks[dateKey] = "vacation";
   else delete workDayMarks[dateKey];
   persist();
   renderCalendar();
   renderStreaks();
+  renderGoalCard();
+  renderTodayStatus();
 }
 
 function renderCalendar(){
@@ -1284,6 +1306,7 @@ function renderCalendar(){
     let cls = "cal-cell";
     if(mark==="work") cls += " cal-work";
     else if(mark==="off") cls += " cal-off";
+    else if(mark==="vacation") cls += " cal-vacation";
     if(isToday) cls += " cal-today";
     if(isBlocked) cls += " cal-disabled";
     cells.push(`<button type="button" class="${cls}" data-date="${dk}"${isBlocked?" disabled":""}>
@@ -1338,16 +1361,31 @@ function renderStreaks(){
   document.getElementById("streakBest").textContent = `${best} ${daysWord(best)}`;
 }
 
+// Скільки робочих днів лишилось у поточному місяці (враховуючи позначки в календарі)
+function countWorkDaysRemainingInMonth(){
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  let count = 0;
+  for(let d = now.getDate(); d <= daysInMonth; d++){
+    const dk = dateKeyOf(new Date(year, month, d));
+    const mark = workDayMarks[dk];
+    if(mark === "off" || mark === "vacation") continue;
+    count++;
+  }
+  return count;
+}
+
 // ── Ціль на місяць ────────────────────────────────────────────────
 function renderGoalCard(){
   const input = document.getElementById("monthGoalInput");
   if(input && document.activeElement !== input) input.value = monthGoal || "";
 
-  const now = new Date();
   const curMonth = monthKey(todayKey());
-  const monthSum = records.filter(r=>monthKey(r.date)===curMonth).reduce((s,r)=>s+r.qty*(r.rate??0),0);
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  const daysLeft = daysInMonth - now.getDate() + 1;
+  const monthRecords = records.filter(r=>monthKey(r.date)===curMonth);
+  const monthSum = monthRecords.reduce((s,r)=>s+r.qty*(r.rate??0),0);
+  const monthQty = monthRecords.reduce((s,r)=>s+r.qty,0);
+  const workDaysLeft = countWorkDaysRemainingInMonth();
 
   const el = document.getElementById("goalResult");
   if(!monthGoal){
@@ -1356,14 +1394,45 @@ function renderGoalCard(){
   }
   const pct = Math.min(100, Math.round(monthSum/monthGoal*100));
   const remaining = Math.max(0, monthGoal - monthSum);
-  const perDay = daysLeft>0 ? remaining/daysLeft : remaining;
+
+  // Середня ставка за дрон — з фактичних даних місяця, або орієнтир з КПІ
+  const kpiTotal = kpiIP + kpiAnalog;
+  const avgRate = monthQty>0
+    ? (monthSum/monthQty)
+    : (kpiTotal>0 ? (kpiIP*rates.IP + kpiAnalog*rates.Analog)/kpiTotal : 0);
+  const perDaySum = workDaysLeft>0 ? remaining/workDaysLeft : remaining;
+  const perDayQty = avgRate>0 ? perDaySum/avgRate : 0;
+  const totalDronesNeeded = avgRate>0 ? remaining/avgRate : 0;
 
   el.innerHTML = `
     <div class="goal-bar-bg"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
     <div class="goal-stats">${fmt(monthSum)} / ${fmt(monthGoal)} ₴ (${pct}%)</div>
     ${remaining>0
-      ? `<div class="goal-note">Залишилось <b>${fmt(Math.round(remaining))} ₴</b> за ${daysLeft} ${daysWord(daysLeft)} — це приблизно <b>${fmt(Math.round(perDay))} ₴/день</b>.</div>`
+      ? `<div class="goal-note">Залишилось <b>${fmt(Math.round(remaining))} ₴</b> (~<b>${Math.ceil(totalDronesNeeded)} шт</b> дронів) за <b>${workDaysLeft} робочих ${daysWord(workDaysLeft)}</b>.<br>Це приблизно <b>${fmt(Math.round(perDaySum))} ₴/день</b>, або <b>~${perDayQty.toFixed(1)} шт/день</b>.</div>`
       : `<div class="goal-note goal-done">🎉 Ціль на місяць вже досягнута!</div>`}
+  `;
+}
+
+// ── Статус сьогодні + прогрес КПІ (на Головній) ──────────────────
+function renderTodayStatus(){
+  const badge = document.getElementById("dayStatusBadge");
+  const kpiEl = document.getElementById("kpiProgress");
+  if(!badge || !kpiEl) return;
+
+  const dk = todayKey();
+  const mark = workDayMarks[dk];
+  let label = "Не позначено", cls = "";
+  if(mark === "off"){ label = "Вихідний"; cls = "status-off"; }
+  else if(mark === "vacation"){ label = "Відпустка"; cls = "status-vacation"; }
+  else if(mark === "work" || records.some(r=>r.date===dk)){ label = "Робочий день"; cls = "status-work"; }
+  badge.textContent = label;
+  badge.className = "day-status-badge" + (cls ? " "+cls : "");
+
+  const todayIP = records.filter(r=>r.date===dk && r.type==="IP").reduce((s,r)=>s+r.qty,0);
+  const todayAnalog = records.filter(r=>r.date===dk && r.type==="Analog").reduce((s,r)=>s+r.qty,0);
+  kpiEl.innerHTML = `
+    <span class="${todayIP>=kpiIP && kpiIP>0 ? 'kpi-met' : ''}">IP <b>${todayIP}/${kpiIP}</b></span>
+    <span class="${todayAnalog>=kpiAnalog && kpiAnalog>0 ? 'kpi-met' : ''}">Analog <b>${todayAnalog}/${kpiAnalog}</b></span>
   `;
 }
 
@@ -1448,6 +1517,7 @@ function renderStats(){
   document.getElementById("typeSplit").innerHTML =
     TYPES.map(t => `<span class="item"><span class="dot" style="background:${HUE[t]}"></span><span class="muted">${t}</span><b>${byType[t]||0}</b></span>`).join("") +
     `<span class="item" style="margin-left:auto"><span class="muted">разом</span><b>${monthCount} шт</b></span>`;
+  renderTodayStatus();
 }
 
 function renderChart(){
@@ -1613,6 +1683,16 @@ function renderSettings(){
       <input class="rate-input" type="number" inputmode="numeric" data-type="${t}" value="${rates[t]}">
     </div>`).join("") + `
     <div class="settings-divider"></div>
+    <div class="settings-label">КПІ (план на день)</div>
+    <div class="settings-row">
+      <span class="left"><span class="dot" style="background:${HUE.IP}"></span><span class="muted">IP, шт/день</span></span>
+      <input class="rate-input" type="number" inputmode="numeric" id="kpiIPInput" value="${kpiIP}">
+    </div>
+    <div class="settings-row">
+      <span class="left"><span class="dot" style="background:${HUE.Analog}"></span><span class="muted">Analog, шт/день</span></span>
+      <input class="rate-input" type="number" inputmode="numeric" id="kpiAnalogInput" value="${kpiAnalog}">
+    </div>
+    <div class="settings-divider"></div>
     <div class="settings-label">Google Таблиця</div>
     <div class="sheet-block">
       <input class="sheet-url-input" type="url" id="sheetUrlInput" placeholder="Встав посилання з Apps Script" value="${esc(sheetUrl)}">
@@ -1637,6 +1717,14 @@ function renderSettings(){
       persist(); renderStats(); renderSegment(); renderQty(); renderStatsScreen();
     }
   );
+  document.getElementById("kpiIPInput").oninput = (e) => {
+    kpiIP = Math.max(0, Number(e.target.value)||0);
+    persist(); renderStats();
+  };
+  document.getElementById("kpiAnalogInput").oninput = (e) => {
+    kpiAnalog = Math.max(0, Number(e.target.value)||0);
+    persist(); renderStats();
+  };
   document.getElementById("sheetUrlInput").oninput = (e) => {
     sheetUrl = e.target.value.trim();
     persist();
