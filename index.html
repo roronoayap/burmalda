@@ -343,6 +343,15 @@
   .cal-dot-off{background:#e08a7d;}
   .cal-cell.cal-vacation{background:rgba(150,160,235,.16); border-color:rgba(150,160,235,.4); color:#a9b2f2;}
   .cal-dot-vacation{background:#a9b2f2;}
+  .cal-cell.cal-locked{opacity:.7; cursor:default;}
+  .cal-save-btn{
+    width:100%; margin-top:14px; padding:12px 0; border-radius:12px; font-size:14px; font-weight:700;
+    background:var(--gold); color:#1d1607; border:none;
+    box-shadow:0 4px 16px rgba(233,185,92,.18), inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .cal-save-btn.cal-save-locked{
+    background:#1c1c21; color:var(--ink); border:1px solid var(--line); box-shadow:none;
+  }
 
   /* Серії */
   .streak-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
@@ -697,6 +706,12 @@
         <span class="cal-legend-item"><span class="dot cal-dot-vacation"></span> відпустка</span>
         <span class="cal-legend-item">тап по дню — перемкнути</span>
       </div>
+      <button class="cal-save-btn" id="calSaveBtn">💾 Зберегти графік</button>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Прогноз на місяць за КПІ</div>
+      <div id="forecastResult"></div>
     </div>
 
     <div class="card">
@@ -893,6 +908,7 @@ let calendarMonthOffset = 0;
 let monthGoal = 0;
 let kpiIP = 8;
 let kpiAnalog = 10;
+let savedMonths = {}; // {"YYYY-MM": true} — заблоковані (збережені) графіки місяців
 
 // ─── Утиліти ──────────────────────────────────────────────────
 const fmt = n => n.toLocaleString("uk-UA").replace(/,/g," ");
@@ -981,6 +997,7 @@ function load(){
       monthGoal = data.monthGoal || 0;
       kpiIP = (typeof data.kpiIP === "number") ? data.kpiIP : 8;
       kpiAnalog = (typeof data.kpiAnalog === "number") ? data.kpiAnalog : 10;
+      savedMonths = data.savedMonths || {};
     } else {
       batchCounter = 1;
       sheetUrl = DEFAULT_SHEET_URL;
@@ -992,7 +1009,7 @@ function persist(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       records, rates, sheetUrl, batchCounter,
       timeEntries, timerRunning, timerBaseElapsed, timerStartTs,
-      workDayMarks, monthGoal, kpiIP, kpiAnalog
+      workDayMarks, monthGoal, kpiIP, kpiAnalog, savedMonths
     }));
   }catch(e){}
 }
@@ -1290,8 +1307,42 @@ function renderTimeScreen(){
 
 function renderRhythmScreen(){
   renderCalendar();
+  renderForecast();
   renderStreaks();
   renderGoalCard();
+}
+
+// ── Прогноз на місяць за КПІ (з урахуванням вихідних/відпустки) ──
+function renderForecast(){
+  const el = document.getElementById("forecastResult");
+  if(!el) return;
+
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  let workDays = 0, offDays = 0, vacationDays = 0;
+  for(let d=1; d<=daysInMonth; d++){
+    const dk = dateKeyOf(new Date(year, month, d));
+    const mark = workDayMarks[dk];
+    if(mark === "off") offDays++;
+    else if(mark === "vacation") vacationDays++;
+    else workDays++;
+  }
+
+  const forecastQtyIP = workDays * kpiIP;
+  const forecastQtyAnalog = workDays * kpiAnalog;
+  const forecastSum = forecastQtyIP*rates.IP + forecastQtyAnalog*rates.Analog;
+
+  el.innerHTML = `
+    <div class="time-stat-grid">
+      <div class="time-stat-box"><div class="label">Робочих днів</div><div class="value">${workDays} з ${daysInMonth}</div></div>
+      <div class="time-stat-box"><div class="label">Вихідних/відпустка</div><div class="value">${offDays+vacationDays}</div></div>
+      <div class="time-stat-box"><div class="label">Прогноз штук</div><div class="value">${forecastQtyIP} IP · ${forecastQtyAnalog} An</div></div>
+      <div class="time-stat-box"><div class="label">Прогноз суми</div><div class="value">${fmt(Math.round(forecastSum))} ₴</div></div>
+    </div>
+    <div class="goal-note">Якщо виконувати КПІ (${kpiIP} IP + ${kpiAnalog} Analog) щодня в робочі дні цього місяця — вийде приблизно <b>${fmt(Math.round(forecastSum))} ₴</b>.</div>
+  `;
 }
 
 // ── Календар робочих/вихідних днів/відпустки ─────────────────────
@@ -1310,6 +1361,7 @@ function toggleDayMark(dateKey){
   else delete workDayMarks[dateKey];
   persist();
   renderCalendar();
+  renderForecast();
   renderStreaks();
   renderGoalCard();
   renderTodayStatus();
@@ -1319,6 +1371,8 @@ function renderCalendar(){
   const now = new Date();
   const viewDate = new Date(now.getFullYear(), now.getMonth() + calendarMonthOffset, 1);
   const year = viewDate.getFullYear(), month = viewDate.getMonth();
+  const viewMonthKey = `${year}-${pad(month+1)}`;
+  const locked = !!savedMonths[viewMonthKey];
   document.getElementById("calendarLabel").textContent = `${MONTHS_NOM[month]} ${year}`;
 
   const firstDay = new Date(year, month, 1);
@@ -1334,13 +1388,13 @@ function renderCalendar(){
     const mark = workDayMarks[dk];
     const hasRecord = records.some(r=>r.date===dk);
     const isToday = dk === todayStr;
-    const isBlocked = dk > todayStr || dk < minDate;
+    const isBlocked = dk < minDate || locked;
     let cls = "cal-cell";
     if(mark==="work") cls += " cal-work";
     else if(mark==="off") cls += " cal-off";
     else if(mark==="vacation") cls += " cal-vacation";
     if(isToday) cls += " cal-today";
-    if(isBlocked) cls += " cal-disabled";
+    if(isBlocked) cls += " cal-disabled" + (locked && dk>=minDate ? " cal-locked" : "");
     cells.push(`<button type="button" class="${cls}" data-date="${dk}"${isBlocked?" disabled":""}>
       <span>${d}</span>${hasRecord ? '<span class="cal-dot"></span>' : ''}
     </button>`);
@@ -1350,10 +1404,20 @@ function renderCalendar(){
     btn.onclick = () => toggleDayMark(btn.dataset.date)
   );
 
-  const curMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  document.getElementById("calNextBtn").disabled = viewDate >= curMonthStart;
+  const maxMonthStart = new Date(now.getFullYear(), now.getMonth()+1, 1); // дозволяємо на 1 місяць наперед
+  document.getElementById("calNextBtn").disabled = viewDate >= maxMonthStart;
   const minMonthStart = new Date(EARLIEST_DATE.getFullYear(), EARLIEST_DATE.getMonth(), 1);
   document.getElementById("calPrevBtn").disabled = viewDate <= minMonthStart;
+
+  const saveBtn = document.getElementById("calSaveBtn");
+  saveBtn.textContent = locked ? "✏️ Редагувати графік" : "💾 Зберегти графік";
+  saveBtn.className = "cal-save-btn" + (locked ? " cal-save-locked" : "");
+  saveBtn.onclick = () => {
+    if(locked) delete savedMonths[viewMonthKey];
+    else savedMonths[viewMonthKey] = true;
+    persist();
+    renderCalendar();
+  };
 }
 
 // ── Серії підряд відпрацьованих днів ─────────────────────────────
