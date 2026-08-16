@@ -1528,6 +1528,7 @@ function stopAndSaveTimer(){
     renderHoursChart();
   }
   persist();
+  if(minutes > 0) pushToSheet();
   renderTimerDisplay();
   renderTimerTypeSegment();
 }
@@ -1599,6 +1600,7 @@ function renderHoursGoal(){
   if(input) input.oninput = (e) => {
     dailyHourGoal = Math.max(0, Number(e.target.value)||0);
     persist();
+    pushToSheetDebounced();
     renderHoursGoal();
   };
 }
@@ -1707,6 +1709,7 @@ function toggleDayMark(dateKey){
   else if(cur === "off") workDayMarks[dateKey] = "vacation";
   else delete workDayMarks[dateKey];
   persist();
+  pushToSheet();
   renderCalendar();
   renderForecast();
   renderStreaks();
@@ -2042,6 +2045,7 @@ function renderTimeStats(){
     b.onclick = () => {
       timeEntries = timeEntries.filter(t => t.id !== b.dataset.id);
       persist();
+      pushToSheet();
       renderTimeStats();
       renderHoursChart();
       renderTimelineToday();
@@ -2427,16 +2431,16 @@ function renderSettings(){
   document.querySelectorAll("#settings .rate-input").forEach(inp =>
     inp.oninput = () => {
       rates[inp.dataset.type] = Math.max(0, Number(inp.value)||0);
-      persist(); renderStats(); renderSegment(); renderQty(); renderStatsScreen();
+      persist(); pushToSheetDebounced(); renderStats(); renderSegment(); renderQty(); renderStatsScreen();
     }
   );
   document.getElementById("kpiIPInput").oninput = (e) => {
     kpiIP = Math.max(0, Number(e.target.value)||0);
-    persist(); renderStats();
+    persist(); pushToSheetDebounced(); renderStats();
   };
   document.getElementById("kpiAnalogInput").oninput = (e) => {
     kpiAnalog = Math.max(0, Number(e.target.value)||0);
-    persist(); renderStats();
+    persist(); pushToSheetDebounced(); renderStats();
   };
   document.getElementById("sheetUrlInput").oninput = (e) => {
     sheetUrl = e.target.value.trim();
@@ -2555,6 +2559,13 @@ function renumberByDate(){
   batchCounter = sorted.length + 1;
 }
 
+let pushDebounceTimer = null;
+function pushToSheetDebounced(){
+  lastLocalWriteAt = Date.now(); // одразу гасимо автопідтягування, щоб не перебило щойно введене
+  if(pushDebounceTimer) clearTimeout(pushDebounceTimer);
+  pushDebounceTimer = setTimeout(() => { pushToSheet(); }, 900);
+}
+
 function pushToSheet(){
   lastLocalWriteAt = Date.now();
   renumberByDate();
@@ -2599,9 +2610,13 @@ function fetchFromSheet(force){
       const timeSheetLooksEmpty = Array.isArray(data.timeEntries) && data.timeEntries.length === 0 && timeEntries.length > 0;
       if(Array.isArray(data.timeEntries) && !timeSheetLooksEmpty) timeEntries = data.timeEntries;
 
-      if(data.workDayMarks && typeof data.workDayMarks === "object") workDayMarks = data.workDayMarks;
+      const calSheetLooksEmpty = data.workDayMarks && typeof data.workDayMarks === "object"
+        && Object.keys(data.workDayMarks).length === 0 && Object.keys(workDayMarks).length > 0;
+      if(data.workDayMarks && typeof data.workDayMarks === "object" && !calSheetLooksEmpty) workDayMarks = data.workDayMarks;
 
-      if(data.settings && typeof data.settings === "object"){
+      // Налаштування підтягуємо тільки якщо в таблиці вони реально є —
+      // порожній об'єкт (аркуш ще не створився) не повинен затирати локальні значення.
+      if(data.settings && typeof data.settings === "object" && Object.keys(data.settings).length > 0){
         const s = data.settings;
         if(typeof s.rateIP === "number") rates.IP = s.rateIP;
         if(typeof s.rateAnalog === "number") rates.Analog = s.rateAnalog;
@@ -2819,6 +2834,7 @@ document.getElementById("timeEntryAddBtn").onclick = () => {
   const date = dateInp.value || todayKey();
   timeEntries.unshift({ id: `time-${Date.now()}`, date, minutes, type: manualTimeType });
   persist();
+  pushToSheet();
   minInp.value = "";
   renderTimeStats();
   renderHoursChart();
@@ -2830,6 +2846,7 @@ document.getElementById("monthGoalInput").oninput = (e) => {
   const v = parseInt(e.target.value, 10);
   monthGoal = (Number.isFinite(v) && v > 0) ? v : 0;
   persist();
+  pushToSheetDebounced();
   renderGoalCard();
 };
 
