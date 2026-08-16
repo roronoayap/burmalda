@@ -588,11 +588,11 @@
   .tab-selector-btn.open .tab-selector-chevron{transform:rotate(180deg);}
   .tab-dropdown-panel{
     position:absolute; top:52px; left:50%; transform:translateX(-50%);
-    width:250px; z-index:40; display:none; grid-template-columns:1fr 1fr; gap:10px;
+    width:236px; z-index:40; display:none; flex-direction:column; gap:2px;
     background:linear-gradient(165deg,#1e1712,#19130f); border:1px solid #2e2620; border-radius:20px;
-    padding:14px; box-shadow:0 20px 50px rgba(0,0,0,.5);
+    padding:7px; box-shadow:0 20px 50px rgba(0,0,0,.5);
   }
-  .tab-dropdown-panel.open{display:grid; animation:dropdownPop .3s cubic-bezier(.34,1.5,.64,1) both;}
+  .tab-dropdown-panel.open{display:flex; animation:dropdownPop .3s cubic-bezier(.34,1.5,.64,1) both;}
   .tab-dropdown-panel.closing{animation:dropdownPopOut .18s ease both;}
   @keyframes dropdownPop{
     from{opacity:0; transform:translateX(-50%) scale(.9) translateY(-8px);}
@@ -604,13 +604,22 @@
   }
   @media (prefers-reduced-motion: reduce){.tab-dropdown-panel.open, .tab-dropdown-panel.closing{animation:none;}}
   .tab-dropdown-item{
-    display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 8px;
-    border-radius:14px; background:#201a15; border:1px solid var(--line); color:var(--mute);
-    font-size:11.5px; font-weight:600; transition:background .15s, border-color .15s, color .15s;
+    display:flex; align-items:center; gap:11px; padding:9px 10px;
+    border-radius:13px; background:transparent; border:none; color:var(--mute);
+    font-size:14px; font-weight:600; text-align:left; width:100%;
+    transition:background .15s, color .15s;
   }
-  .tab-dropdown-item svg{width:21px; height:21px;}
-  .tab-dropdown-item.active{background:rgba(233,185,92,.14); border-color:var(--gold); color:var(--gold);}
-  .tab-dropdown-item:last-child:nth-child(odd){grid-column:1/-1;}
+  .tab-dropdown-item:active{background:rgba(255,255,255,.04);}
+  .tab-dropdown-icon{
+    width:32px; height:32px; border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.04);
+  }
+  .tab-dropdown-icon svg{width:17px; height:17px;}
+  .tab-dropdown-label{flex:1;}
+  .tab-dropdown-check{color:var(--gold); font-size:13px; font-weight:800; flex-shrink:0;}
+  .tab-dropdown-item.active{color:var(--gold);}
+  .tab-dropdown-item.active .tab-dropdown-icon{background:rgba(233,185,92,.16);}
 </style>
 </head>
 <body>
@@ -2576,11 +2585,11 @@ document.addEventListener("visibilitychange", () => {
 
 // ─── Вибір вкладки (випадний список у шапці) ────────────────────
 const TAB_DEFS = [
-  { id:"home", label:"Головна", icon:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3 2.6 10.7a1 1 0 0 0 1.27 1.55L4.5 11.9V19a1.6 1.6 0 0 0 1.6 1.6H9.6v-5.7a1 1 0 0 1 1-1h2.8a1 1 0 0 1 1 1v5.7h3.5A1.6 1.6 0 0 0 19.5 19v-7.1l.63.35a1 1 0 0 0 1.27-1.55z"/></svg>' },
-  { id:"stats", label:"Статистика", icon:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="12.5" width="4" height="7.5" rx="1.3"/><rect x="10" y="7.5" width="4" height="12.5" rx="1.3"/><rect x="16" y="3.5" width="4" height="16.5" rx="1.3"/></svg>' },
-  { id:"time", label:"Час", icon:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3a10 10 0 1 0 .01 0Zm.9 5.4a.9.9 0 1 0-1.8 0v4.9c0 .27.12.53.33.7l3.1 2.6a.9.9 0 1 0 1.15-1.38l-2.78-2.34Z"/><rect x="9.5" y="1" width="5" height="2" rx="1"/></svg>' },
-  { id:"rhythm", label:"Ритм", icon:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><circle cx="8" cy="3.6" r="1.2"/><circle cx="16" cy="3.6" r="1.2"/></svg>' },
-  { id:"archive", label:"Архів", icon:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="3" y="4" width="18" height="5" rx="1.6"/><path d="M4.5 10.5h15V18a1.8 1.8 0 0 1-1.8 1.8H6.3A1.8 1.8 0 0 1 4.5 18Z"/><rect x="9.5" y="12.5" width="5" height="1.8" rx=".9" fill="var(--bg)"/></svg>' },
+  { id:"home", label:"Головна", icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.3V19a1.2 1.2 0 0 0 1.2 1.2H9.8v-5.6a1 1 0 0 1 1-1h2.4a1 1 0 0 1 1 1v5.6h3.1A1.2 1.2 0 0 0 18.5 19V9.3"/></svg>' },
+  { id:"stats", label:"Статистика", icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12.5" width="4" height="7.5" rx="1"/><rect x="10" y="7.5" width="4" height="12.5" rx="1"/><rect x="16" y="3.5" width="4" height="16.5" rx="1"/></svg>' },
+  { id:"time", label:"Час", icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.2"/><path d="M9.5 2h5"/></svg>' },
+  { id:"rhythm", label:"Ритм", icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/></svg>' },
+  { id:"archive", label:"Архів", icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.6"/><path d="M4.5 9v9a1.6 1.6 0 0 0 1.6 1.6h11.8A1.6 1.6 0 0 0 19.5 18V9"/><path d="M10 13h4"/></svg>' },
 ];
 let currentView = "home";
 
@@ -2599,7 +2608,9 @@ function showView(view){
 function renderTabDropdown(){
   document.getElementById("tabDropdownPanel").innerHTML = TAB_DEFS.map(t => `
     <button type="button" class="tab-dropdown-item${currentView===t.id ? " active":""}" data-view="${t.id}">
-      ${t.icon}<span>${t.label}</span>
+      <span class="tab-dropdown-icon">${t.icon}</span>
+      <span class="tab-dropdown-label">${t.label}</span>
+      ${currentView===t.id ? '<span class="tab-dropdown-check">✓</span>' : ''}
     </button>`).join("");
   document.querySelectorAll(".tab-dropdown-item").forEach(btn =>
     btn.onclick = () => { showView(btn.dataset.view); closeTabDropdown(); }
