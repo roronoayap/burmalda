@@ -2560,11 +2560,15 @@ function pushToSheet(){
   renumberByDate();
   persist();
   if(!sheetUrl) return;
+  const settings = {
+    rateIP: rates.IP, rateAnalog: rates.Analog, rateRadio: rates.Radio,
+    kpiIP: kpiIP, kpiAnalog: kpiAnalog, monthGoal: monthGoal, dailyHourGoal: dailyHourGoal
+  };
   fetch(sheetUrl, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ type: "sync", secret: SHEET_SECRET, records })
+    body: JSON.stringify({ type: "sync", secret: SHEET_SECRET, records, timeEntries, workDayMarks, settings })
   }).catch(() => {});
 }
 
@@ -2589,8 +2593,25 @@ function fetchFromSheet(force){
 
       records = data.records.map(r => ({
         ...r,
-        rate: (typeof r.rate === "number" && r.rate > 0) ? r.rate : (rates[r.type] ?? 0)
+        rate: (typeof r.rate === "number" && r.rate > 0) ? r.rate : (rates[r.type] ?? 0),
       }));
+
+      const timeSheetLooksEmpty = Array.isArray(data.timeEntries) && data.timeEntries.length === 0 && timeEntries.length > 0;
+      if(Array.isArray(data.timeEntries) && !timeSheetLooksEmpty) timeEntries = data.timeEntries;
+
+      if(data.workDayMarks && typeof data.workDayMarks === "object") workDayMarks = data.workDayMarks;
+
+      if(data.settings && typeof data.settings === "object"){
+        const s = data.settings;
+        if(typeof s.rateIP === "number") rates.IP = s.rateIP;
+        if(typeof s.rateAnalog === "number") rates.Analog = s.rateAnalog;
+        if(typeof s.rateRadio === "number") rates.Radio = s.rateRadio;
+        if(typeof s.kpiIP === "number") kpiIP = s.kpiIP;
+        if(typeof s.kpiAnalog === "number") kpiAnalog = s.kpiAnalog;
+        if(typeof s.monthGoal === "number") monthGoal = s.monthGoal;
+        if(typeof s.dailyHourGoal === "number") dailyHourGoal = s.dailyHourGoal;
+      }
+
       persist();
       renderAll();
       setSyncStatus(`Оновлено з таблиці о ${nowTimeStr()}`, "ok");
