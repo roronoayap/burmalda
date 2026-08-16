@@ -73,8 +73,18 @@
     position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(90% 60% at 50% 0%, #1c1511 0%, var(--bg) 60%);
   }
+  .launch-splash-inner{position:relative; display:flex; flex-direction:column; align-items:center;}
+  .launch-splash-ring{
+    position:absolute; top:42px; left:50%; width:84px; height:84px; border-radius:24px;
+    transform:translate(-50%,-50%); border:1.5px solid rgba(233,185,92,.55);
+    animation:splashRing 1.7s cubic-bezier(.2,.7,.3,1) .35s infinite;
+  }
+  @keyframes splashRing{
+    0%{transform:translate(-50%,-50%) scale(1); opacity:.85;}
+    100%{transform:translate(-50%,-50%) scale(1.9); opacity:0;}
+  }
   .launch-splash-logo{
-    width:84px; height:84px; border-radius:24px;
+    width:84px; height:84px; border-radius:24px; position:relative; z-index:1;
     box-shadow:0 16px 44px rgba(0,0,0,.45);
     animation:splashIn .5s cubic-bezier(.34,1.5,.64,1) both, splashPulse 1.3s ease-in-out .5s infinite;
   }
@@ -86,13 +96,22 @@
     0%,100%{transform:scale(1);}
     50%{transform:scale(1.07);}
   }
+  .launch-splash-word{
+    margin-top:20px; font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:800; letter-spacing:3px;
+    background:linear-gradient(150deg,#f4d189,var(--gold) 65%); -webkit-background-clip:text; background-clip:text; color:transparent;
+    opacity:0; animation:splashWordIn .5s ease .4s both;
+  }
+  @keyframes splashWordIn{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
   .launch-splash.closing{animation:splashFadeOut .4s ease both;}
   @keyframes splashFadeOut{
     from{opacity:1; visibility:visible;}
     to{opacity:0; visibility:hidden;}
   }
   @media (prefers-reduced-motion: reduce){
-    .launch-splash-logo{animation:none;}
+    .launch-splash-logo, .launch-splash-ring, .launch-splash-word{animation:none; opacity:1;}
     .launch-splash.closing{animation:none; opacity:0;}
   }
 
@@ -588,7 +607,7 @@
   .tab-selector-btn.open .tab-selector-chevron{transform:rotate(180deg);}
   .tab-dropdown-panel{
     position:absolute; top:52px; left:50%; transform:translateX(-50%);
-    width:236px; z-index:40; display:none; flex-direction:column; gap:2px;
+    width:258px; z-index:40; display:none; flex-direction:column; gap:2px;
     background:linear-gradient(165deg,#1e1712,#19130f); border:1px solid #2e2620; border-radius:20px;
     padding:7px; box-shadow:0 20px 50px rgba(0,0,0,.5);
   }
@@ -604,22 +623,24 @@
   }
   @media (prefers-reduced-motion: reduce){.tab-dropdown-panel.open, .tab-dropdown-panel.closing{animation:none;}}
   .tab-dropdown-item{
-    display:flex; align-items:center; gap:11px; padding:9px 10px;
-    border-radius:13px; background:transparent; border:none; color:var(--mute);
+    display:flex; align-items:center; gap:11px; padding:10px 10px;
+    border-radius:14px; background:transparent; border:none; color:var(--mute);
     font-size:14px; font-weight:600; text-align:left; width:100%;
     transition:background .15s, color .15s;
   }
   .tab-dropdown-item:active{background:rgba(255,255,255,.04);}
   .tab-dropdown-icon{
-    width:32px; height:32px; border-radius:10px; flex-shrink:0;
+    width:36px; height:36px; border-radius:11px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
     background:rgba(255,255,255,.04);
   }
-  .tab-dropdown-icon svg{width:17px; height:17px;}
-  .tab-dropdown-label{flex:1;}
+  .tab-dropdown-icon svg{width:18px; height:18px;}
+  .tab-dropdown-text{flex:1; display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .tab-dropdown-label{color:var(--ink); font-size:14px; font-weight:700;}
+  .tab-dropdown-stat{color:var(--mute); font-size:11px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .tab-dropdown-check{color:var(--gold); font-size:13px; font-weight:800; flex-shrink:0;}
-  .tab-dropdown-item.active{color:var(--gold);}
-  .tab-dropdown-item.active .tab-dropdown-icon{background:rgba(233,185,92,.16);}
+  .tab-dropdown-item.active .tab-dropdown-label{color:var(--gold);}
+  .tab-dropdown-item.active .tab-dropdown-icon{background:rgba(233,185,92,.16); color:var(--gold);}
 </style>
 </head>
 <body>
@@ -2605,11 +2626,41 @@ function showView(view){
   window.scrollTo(0,0);
 }
 
+function getTabStat(id){
+  try{
+    if(id === "home"){
+      const curMonth = monthKey(todayKey());
+      const sum = records.filter(r=>monthKey(r.date)===curMonth).reduce((s,r)=>s+r.qty*(r.rate??0),0);
+      return `${fmt(sum)} ₴ цього місяця`;
+    }
+    if(id === "stats"){
+      const qty = records.reduce((s,r)=>s+r.qty,0);
+      return `${qty} шт за весь час`;
+    }
+    if(id === "time"){
+      const mins = timeEntries.filter(t=>t.date===todayKey()).reduce((s,t)=>s+t.minutes,0);
+      if(mins<=0) return "ще не почато сьогодні";
+      return `${Math.floor(mins/60)} год ${mins%60} хв сьогодні`;
+    }
+    if(id === "rhythm"){
+      const { current } = computeStreaks();
+      return current>0 ? `${current} ${daysWord(current)} поспіль` : "почни серію сьогодні";
+    }
+    if(id === "archive"){
+      return `${records.length} записів`;
+    }
+  }catch(e){}
+  return "";
+}
+
 function renderTabDropdown(){
   document.getElementById("tabDropdownPanel").innerHTML = TAB_DEFS.map(t => `
     <button type="button" class="tab-dropdown-item${currentView===t.id ? " active":""}" data-view="${t.id}">
       <span class="tab-dropdown-icon">${t.icon}</span>
-      <span class="tab-dropdown-label">${t.label}</span>
+      <span class="tab-dropdown-text">
+        <span class="tab-dropdown-label">${t.label}</span>
+        <span class="tab-dropdown-stat">${esc(getTabStat(t.id))}</span>
+      </span>
       ${currentView===t.id ? '<span class="tab-dropdown-check">✓</span>' : ''}
     </button>`).join("");
   document.querySelectorAll(".tab-dropdown-item").forEach(btn =>
@@ -2766,6 +2817,7 @@ function initApp(){
   load();
   renderAll();
   startAutoSync();
+  applySplashProgress();
 
   const entryDateInit = document.getElementById("entryDate");
   entryDateInit.min = dateKeyOf(EARLIEST_DATE);
@@ -2776,6 +2828,21 @@ function initApp(){
   timeEntryDateInit.min = dateKeyOf(EARLIEST_DATE);
   timeEntryDateInit.max = todayKey();
   timeEntryDateInit.value = todayKey();
+}
+
+// Кільце сплеш-екрана світиться яскравіше, чим ближче до цілі місяця — «жива зірка»
+function applySplashProgress(){
+  const ring = document.querySelector(".launch-splash-ring");
+  if(!ring) return;
+  let pct = 0;
+  if(monthGoal > 0){
+    const curMonth = monthKey(todayKey());
+    const sum = records.filter(r=>monthKey(r.date)===curMonth).reduce((s,r)=>s+r.qty*(r.rate??0),0);
+    pct = Math.min(1, sum/monthGoal);
+  }
+  const intensity = 0.35 + pct*0.5;
+  ring.style.borderColor = `rgba(233,185,92,${intensity.toFixed(2)})`;
+  if(pct >= 1) ring.style.borderColor = `rgba(143,209,158,.85)`;
 }
 
 // Якщо вже є збережений валідний вхід — не чекаємо завантаження Google-скрипта
